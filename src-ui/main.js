@@ -6,7 +6,7 @@ let selectedCell = null;
 async function bqlTest(e, cellNumber) {
     // Learn more about Tauri commands at https://v1.tauri.app/v1/guides/features/command
     bqlMsgElement.textContent = `Kee pressd: ${e.key}, Cell number: ${cellNumber}`;
-    //bqlMsgElement.textContent = await invoke("greet", { name: e.key });
+    bqlMsgElement.textContent = await invoke("user_set_cell", { cell_number: cellNumber.toString() });
 }
 
 window.addEventListener("DOMContentLoaded", () => {
