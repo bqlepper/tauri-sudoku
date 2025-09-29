@@ -1,19 +1,22 @@
 const { invoke } = window.__TAURI__.tauri;
 
-let bqlMsgElement = null;
+let greetInputEl;
+let greetMsgEl;
 let selectedCell = null;
 
-async function bqlTest(e, cellNumber) {
-    // Learn more about Tauri commands at https://v1.tauri.app/v1/guides/features/command
-    bqlMsgElement.textContent = `Kee pressd: ${e.key}, Cell number: ${cellNumber}`;
-    bqlMsgElement.textContent = await invoke("user_set_cell", { cell_number: cellNumber.toString() });
+
+async function greet() {
+  // Learn more about Tauri commands at https://v1.tauri.app/v1/guides/features/command
+  greetMsgEl.textContent = await invoke("greet", { name: greetInputEl.value });
 }
 
 window.addEventListener("DOMContentLoaded", () => {
-    bqlMsgElement = document.querySelector("#bql-msg");
-    bqlMsgElement.textContent = "Ready to go!";
-
-    const grid = document.getElementById('sudokuGrid');
+    greetInputEl = document.querySelector("#greet-input");
+    greetMsgEl = document.querySelector("#greet-msg");
+    document.querySelector("#greet-form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        greet();
+    });
 
     // Add click event listener to highlight the selected cell
     grid.addEventListener('click', (e) => {
@@ -30,7 +33,9 @@ window.addEventListener("DOMContentLoaded", () => {
     document.addEventListener('keydown', (e) => {
         const dataIndex = parseInt(selectedCell.getAttribute('data-index'));
         if (selectedCell && e.key >= '1' && e.key <= '9') {
-            bqlTest(e, dataIndex);
+            //bqlTest(e, dataIndex);
+            greetInputEl.value = e.key;
+            greet();
             selectedCell.textContent = e.key;
         } else if (selectedCell &&
                    ((e.key === 'Tab') ||
