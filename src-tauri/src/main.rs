@@ -3,8 +3,8 @@
 
 // Learn more about Tauri commands at https://v1.tauri.app/v1/guides/features/command
 #[tauri::command(rename_all = "snake_case")]
-fn get_puzzle(user_input: &str) -> String {
-    format!("Hello, {}! You've been puzzled from Rust!", user_input)
+fn get_puzzle(cell_index: usize, user_input: &str) -> String {
+    format!("Cell {} set to {}!!!", cell_index, user_input)
 }
 
 fn main() {
