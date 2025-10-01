@@ -2,12 +2,13 @@ const { invoke } = window.__TAURI__.tauri;
 
 let userInputEl;
 let puzzleMsgEl;
+let selectedCellDataIndexEl;
 let selectedCell = null;
 
 
 async function user_input() {
   // Learn more about Tauri commands at https://v1.tauri.app/v1/guides/features/command
-  puzzleMsgEl.textContent = await invoke("get_puzzle", { userinput: userInputEl.value });
+  puzzleMsgEl.textContent = await invoke("get_puzzle", { user_input: userInputEl.value });
 }
 
 window.addEventListener("DOMContentLoaded", () => {
@@ -33,7 +34,8 @@ window.addEventListener("DOMContentLoaded", () => {
     document.addEventListener('keydown', (e) => {
         const dataIndex = parseInt(selectedCell.getAttribute('data-index'));
         if (selectedCell && e.key >= '1' && e.key <= '9') {
-            //bqlTest(e, dataIndex);
+            const dataIndex = e.target.getAttribute('data-index');
+            console.log(`Clicked cell with data-index: ${dataIndex}`);
             userInputEl.value = e.key;
             user_input();
             selectedCell.textContent = e.key;

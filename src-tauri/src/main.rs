@@ -2,9 +2,9 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 // Learn more about Tauri commands at https://v1.tauri.app/v1/guides/features/command
-#[tauri::command]
-fn get_puzzle(userinput: &str) -> String {
-    format!("Hello, {}! You've been puzzled from Rust!", userinput)
+#[tauri::command(rename_all = "snake_case")]
+fn get_puzzle(user_input: &str) -> String {
+    format!("Hello, {}! You've been puzzled from Rust!", user_input)
 }
 
 fn main() {
