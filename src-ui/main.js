@@ -1,21 +1,21 @@
 const { invoke } = window.__TAURI__.tauri;
 
-let greetInputEl;
-let greetMsgEl;
+let userInputEl;
+let puzzleMsgEl;
 let selectedCell = null;
 
 
-async function greet() {
+async function user_input() {
   // Learn more about Tauri commands at https://v1.tauri.app/v1/guides/features/command
-  greetMsgEl.textContent = await invoke("greet", { name: greetInputEl.value });
+  puzzleMsgEl.textContent = await invoke("get_puzzle", { userinput: userInputEl.value });
 }
 
 window.addEventListener("DOMContentLoaded", () => {
-    greetInputEl = document.querySelector("#greet-input");
-    greetMsgEl = document.querySelector("#greet-msg");
+    userInputEl = document.querySelector("#greet-input");
+    puzzleMsgEl = document.querySelector("#greet-msg");
     document.querySelector("#greet-form").addEventListener("submit", (e) => {
         e.preventDefault();
-        greet();
+        user_input();
     });
 
     // Add click event listener to highlight the selected cell
@@ -34,8 +34,8 @@ window.addEventListener("DOMContentLoaded", () => {
         const dataIndex = parseInt(selectedCell.getAttribute('data-index'));
         if (selectedCell && e.key >= '1' && e.key <= '9') {
             //bqlTest(e, dataIndex);
-            greetInputEl.value = e.key;
-            greet();
+            userInputEl.value = e.key;
+            user_input();
             selectedCell.textContent = e.key;
         } else if (selectedCell &&
                    ((e.key === 'Tab') ||

@@ -1,8 +1,5 @@
 # TODOs
 
-- Do some renaming.  Get the greet out of there and make it more sudokuy
-- Maybe rename the weird src and tauri-src directories?
-- How can we start this from command line and get output from rust (grid prints etc...)?
 - And can we pass in something to say whether or not to do the GUI or not (just do command line)?
 - Put in a lot of the rust sudoku backend stuff
 - Test passing back and printing a whole grid
