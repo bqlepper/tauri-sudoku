@@ -4,7 +4,6 @@ let userInputEl;
 let puzzleMsgEl;
 let selectedCell = null;
 
-
 async function user_input() {
   // Learn more about Tauri commands at https://v1.tauri.app/v1/guides/features/command
   puzzleMsgEl.textContent =
