@@ -28,12 +28,17 @@ fn user_change(state: State<'_, GameState>, cell_index: usize, user_input: u8) -
     // Lock the mutex to get mutable access to the Game
     let mut game = state.0.lock().unwrap();
 
-    match game.user_set_value(cell_index / 9, cell_index % 9, user_input) {
-        Ok(_) => {
-            game.print_grid();
-        },
-        Err(user_msg) => {
-            println!("Bad input: {user_msg}");
+    if user_input == 0 {
+        game.user_delete_value(cell_index / 9, cell_index % 9);
+        game.print_grid();
+    } else {
+        match game.user_set_value(cell_index / 9, cell_index % 9, user_input) {
+            Ok(_) => {
+                game.print_grid();
+            },
+            Err(user_msg) => {
+                println!("Bad input: {user_msg}");
+            }
         }
     }
 

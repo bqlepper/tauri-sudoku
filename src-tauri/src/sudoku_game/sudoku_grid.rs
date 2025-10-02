@@ -50,9 +50,6 @@ impl Grid {
 
     pub(super) fn set_debug(&mut self, on: bool) { self.debug_output = on; }
 
-    // Returns true if the given row and column were set by the user
-    pub(super) fn was_set_by_user(&self, row: usize, column:usize) -> bool { self.grid[row][column].is_set_by_user() }
-
     pub(super) fn lock_set_by_user(&mut self, row: usize, column:usize) { self.grid[row][column].lock_set_by_user(); }
 
     // Get all the user settings
@@ -94,24 +91,6 @@ impl Grid {
             self.grid[row][column].clear();
             // replay the remaining user settings on the cleared grid
             self.replay_user_settings(self.get_user_settings());
-        }
-    }
-
-    pub(super) fn get_value(&self, row: usize, column: usize) -> char {
-        match self.grid[row][column].get_value() {
-            Err(_) => 'X',
-            Ok(result) => match result {
-                1 => '1',
-                2 => '2',
-                3 => '3',
-                4 => '4',
-                5 => '5',
-                6 => '6',
-                7 => '7',
-                8 => '8',
-                9 => '9',
-                _ => '-',
-            }
         }
     }
 

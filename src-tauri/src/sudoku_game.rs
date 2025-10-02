@@ -42,15 +42,6 @@ impl Game {
         self.grid.user_delete_value(row, column);
     }
 
-    // Returns true if the given row and column were set by the user
-    pub(super) fn was_set_by_user(&self, row: usize, column:usize) -> bool {
-        self.grid.was_set_by_user(row, column)
-    }
-
-    pub(super) fn get_value(&self, row: usize, column: usize) -> char {
-        self.grid.get_value(row, column)
-    }
-
     // Attempts to set a value in the grid from values input by the user
     // row and column passed into this function are in the 0-8 range.  For debug output rows and columns are also in the 0-8 range.
     // However, for user entry and for displaying the rows and columns in the error messages, they are in the 1-9 range.
