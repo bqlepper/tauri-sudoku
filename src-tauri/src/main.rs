@@ -2,9 +2,13 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::env;
+use std::sync::Mutex;
+use tauri::State;
+
 use crate::sudoku_game::Game;
 
 pub mod sudoku_game;
+struct GameState(Mutex<Game>);
 
 // -- Design and Terminology Definitions --
 // This is the main rust program file.  It handles any command line options when starting the program.
@@ -20,17 +24,18 @@ pub mod sudoku_game;
 
 // Learn more about Tauri commands at https://v1.tauri.app/v1/guides/features/command
 #[tauri::command(rename_all = "snake_case")]
-fn user_change(cell_index: usize, user_input: u8) -> String {
+fn user_change(state: State<'_, GameState>, cell_index: usize, user_input: u8) -> String {
+    // Lock the mutex to get mutable access to the Game
+    let mut game = state.0.lock().unwrap();
 
-    //static mut game: Game = Game::new();
-    //match game.user_set_value(cell_index / 9, cell_index % 9, user_input) {
-    //    Ok(_) => {
-    //        game.print_grid();
-    //    },
-    //    Err(user_msg) => {
-    //        println!("Bad input: {user_msg}");
-    //    }
-    //}
+    match game.user_set_value(cell_index / 9, cell_index % 9, user_input) {
+        Ok(_) => {
+            game.print_grid();
+        },
+        Err(user_msg) => {
+            println!("Bad input: {user_msg}");
+        }
+    }
 
     format!("Cell {} set to {}!!!", cell_index, user_input)
 }
@@ -159,8 +164,10 @@ fn main() {
         go_command_line();
     } else {
         tauri::Builder::default()
+            .manage(GameState(Mutex::new(Game::new()))) // Wrap Game in a Mutex
             .invoke_handler(tauri::generate_handler![user_change])
             .run(tauri::generate_context!())
             .expect("error while running tauri application");
+        println!("Tauri app exited");
     }
 }
