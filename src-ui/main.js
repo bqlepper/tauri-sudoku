@@ -7,8 +7,8 @@ let selectedCell = null;
 async function user_input() {
   // Learn more about Tauri commands at https://v1.tauri.app/v1/guides/features/command
   puzzleMsgEl.textContent =
-      await invoke("get_puzzle", { user_input: userInputEl.value,
-                                   cell_index: parseInt(selectedCell.getAttribute('data-index')) });
+      await invoke("user_change", { user_input: parseInt(userInputEl.value),
+                                    cell_index: parseInt(selectedCell.getAttribute('data-index')) });
 }
 
 window.addEventListener("DOMContentLoaded", () => {

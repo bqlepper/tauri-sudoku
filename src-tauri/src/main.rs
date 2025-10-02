@@ -20,11 +20,23 @@ pub mod sudoku_game;
 
 // Learn more about Tauri commands at https://v1.tauri.app/v1/guides/features/command
 #[tauri::command(rename_all = "snake_case")]
-fn get_puzzle(cell_index: usize, user_input: &str) -> String {
+fn user_change(cell_index: usize, user_input: u8) -> String {
+
+    //static mut game: Game = Game::new();
+    //match game.user_set_value(cell_index / 9, cell_index % 9, user_input) {
+    //    Ok(_) => {
+    //        game.print_grid();
+    //    },
+    //    Err(user_msg) => {
+    //        println!("Bad input: {user_msg}");
+    //    }
+    //}
+
     format!("Cell {} set to {}!!!", cell_index, user_input)
 }
 
-fn go_command_line(game: &mut Game) {
+fn go_command_line() {
+    let mut game: Game = Game::new();
     // This loop allows users to enter given puzzle values from the command line
     loop {
         println!("\nEnter row, column, and value separated by spaces (h for help):");
@@ -134,7 +146,6 @@ fn go_command_line(game: &mut Game) {
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let mut game: Game = Game::new();
 
     match env::current_dir() {
         Ok(pb) => println!("The current directory is {}", pb.display()),
@@ -145,10 +156,10 @@ fn main() {
         // This code implements a command line version of the UI that is good for debugging
         // It allows the users to interactively enter given puzzle values with command line
         // But also offers a debug view of all the values to see what potential values are remaining
-        go_command_line(&mut game);
+        go_command_line();
     } else {
         tauri::Builder::default()
-            .invoke_handler(tauri::generate_handler![get_puzzle])
+            .invoke_handler(tauri::generate_handler![user_change])
             .run(tauri::generate_context!())
             .expect("error while running tauri application");
     }
