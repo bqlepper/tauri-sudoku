@@ -13,6 +13,10 @@ impl Game {
         }
     }
 
+    pub(super) fn get_grid(&mut self) -> String {
+        self.grid.get_grid()
+    }
+
     pub(super) fn set_debug(&mut self, on: bool)
     {
         self.grid.set_debug(on);

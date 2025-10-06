@@ -42,6 +42,9 @@ fn user_change(state: State<'_, GameState>, cell_index: usize, user_input: u8) -
         }
     }
 
+    let grid_string = game.get_grid();
+    println!("{}", grid_string);
+
     format!("Cell {} set to {}!!!", cell_index, user_input)
 }
 

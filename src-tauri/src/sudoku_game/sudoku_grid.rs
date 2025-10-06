@@ -52,6 +52,25 @@ impl Grid {
 
     pub(super) fn lock_set_by_user(&mut self, row: usize, column:usize) { self.grid[row][column].lock_set_by_user(); }
 
+    // stringify the whole grid
+    pub(super) fn get_grid(&self) -> String {
+        let mut grid_string = String::new();
+        for row in 0..GRID_SIZE {
+            for column in 0..GRID_SIZE {
+                if self.grid[row][column].is_set_by_user() {
+                    grid_string.push('u');
+                } else {
+                    grid_string.push('-');
+                }
+                grid_string.push(match self.grid[row][column].get_value() {
+                    Err(_) => 'x',
+                    Ok(v) => (v + b'0') as char,
+                });
+            }
+        }
+        grid_string
+    }
+
     // Get all the user settings
     fn get_user_settings(&self) -> Vec<(usize, usize, u8)> {
         let mut user_settings = Vec::new();
