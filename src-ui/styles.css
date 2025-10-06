@@ -137,3 +137,15 @@ button {
 .cell.selected {
     background-color: #add8e6;
 }
+
+.cell.user-set {
+    color: blue;
+}
+
+.cell.solved {
+    color: green;
+}
+
+.cell.empty-error {
+    color: red;
+}

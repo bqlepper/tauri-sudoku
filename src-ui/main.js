@@ -5,10 +5,30 @@ let puzzleMsgEl;
 let selectedCell = null;
 
 async function user_input() {
-  // Learn more about Tauri commands at https://v1.tauri.app/v1/guides/features/command
-  puzzleMsgEl.textContent =
-      await invoke("user_change", { user_input: parseInt(userInputEl.value),
-                                    cell_index: parseInt(selectedCell.getAttribute('data-index')) });
+    // Learn more about Tauri commands at https://v1.tauri.app/v1/guides/features/command
+    let grid_string =
+        await invoke("user_change", { user_input: parseInt(userInputEl.value),
+                                      cell_index: parseInt(selectedCell.getAttribute('data-index')) });
+
+    for (let index = 0; index <= 80; index++) {
+        let nextCell = document.querySelector(`.cell[data-index="${index}"]`);
+        if (grid_string.charAt((index*2)+1) === '0') {
+            nextCell.textContent = '';
+            nextCell.classList.remove('user-set');
+            nextCell.classList.remove('solved');
+            nextCell.classList.remove('empty-error');
+        } else if (grid_string.charAt((index*2)+1) === 'x') {
+            nextCell.textContent = 'X';
+            nextCell.classList.add('empty-error');
+        } else {
+            if (grid_string.charAt(index*2) === 'u') {
+                nextCell.classList.add('user-set');
+            } else {
+                nextCell.classList.add('solved');
+            }
+            nextCell.textContent = grid_string.charAt((index*2)+1);
+        }
+    }
 }
 
 window.addEventListener("DOMContentLoaded", () => {
