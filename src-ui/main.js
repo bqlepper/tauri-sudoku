@@ -1,13 +1,12 @@
 const { invoke } = window.__TAURI__.tauri;
 
-let userInputEl;
-let puzzleMsgEl;
+let userInput = 0;
 let selectedCell = null;
 
 async function user_input() {
     // Learn more about Tauri commands at https://v1.tauri.app/v1/guides/features/command
     let grid_string =
-        await invoke("user_change", { user_input: parseInt(userInputEl.value),
+        await invoke("user_change", { user_input: parseInt(userInput),
                                       cell_index: parseInt(selectedCell.getAttribute('data-index')) });
 
     for (let index = 0; index <= 80; index++) {
@@ -32,9 +31,7 @@ async function user_input() {
 }
 
 window.addEventListener("DOMContentLoaded", () => {
-    userInputEl = document.querySelector("#greet-input");
-    puzzleMsgEl = document.querySelector("#greet-msg");
-    document.querySelector("#greet-form").addEventListener("submit", (e) => {
+    document.querySelector("#puzzle-form").addEventListener("submit", (e) => {
         e.preventDefault();
         user_input();
     });
@@ -54,9 +51,8 @@ window.addEventListener("DOMContentLoaded", () => {
     document.addEventListener('keydown', (e) => {
         const dataIndex = parseInt(selectedCell.getAttribute('data-index'));
         if (selectedCell && e.key >= '1' && e.key <= '9') {
-            userInputEl.value = e.key;
+            userInput = e.key;
             user_input();
-            selectedCell.textContent = e.key;
         } else if (selectedCell &&
                    ((e.key === 'Tab') ||
                     (e.key === 'ArrowRight') ||

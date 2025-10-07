@@ -1,31 +1,29 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="stylesheet" href="styles.css" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sudoku</title>
-    <script type="module" src="/main.js" defer></script>
-  </head>
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="stylesheet" href="styles.css" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Sudoku</title>
+        <script type="module" src="/main.js" defer></script>
+    </head>
 
-  <body>
-    <main class="container">
-      <form class="row" id="greet-form">
-        <input id="greet-input" placeholder="Enter a name..." />
-        <button type="submit">Greet</button>
-      </form>
-      <p id="greet-msg"></p>
-      <div class="sudoku-grid" id="sudokuGrid"></div>
-      <script>
-          // Generate the Sudoku grid
-          const grid = document.getElementById('sudokuGrid');
-          for (let i = 0; i < 81; i++) {
-              const cell = document.createElement('div');
-              cell.classList.add('cell');
-              cell.setAttribute('data-index', i);
-              grid.appendChild(cell);
-          }
-      </script>
-    </main>
-  </body>
+    <body>
+        <main class="container">
+            <form class="row" id="puzzle-form">
+                <button type="submit">Help</button>
+            </form>
+            <div class="sudoku-grid" id="sudokuGrid"></div>
+            <script>
+                // Generate the Sudoku grid
+                const grid = document.getElementById('sudokuGrid');
+                for (let i = 0; i < 81; i++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    cell.setAttribute('data-index', i);
+                    grid.appendChild(cell);
+                }
+            </script>
+        </main>
+    </body>
 </html>
