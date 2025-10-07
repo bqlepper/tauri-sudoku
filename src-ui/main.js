@@ -1,5 +1,6 @@
 const { invoke } = window.__TAURI__.tauri;
 
+let gameMessageElement;
 let selectedCell = null;
 
 async function user_input(keyPress) {
@@ -30,9 +31,24 @@ async function user_input(keyPress) {
 }
 
 window.addEventListener("DOMContentLoaded", () => {
-    document.querySelector("#puzzle-form").addEventListener("submit", (e) => {
-        e.preventDefault();
-        user_input();
+    gameMessageElement = document.querySelector("#game-message");
+    const helpButton = document.querySelector("#help-button");
+    const clearButton = document.querySelector("#clear-button");
+    const solveButton = document.querySelector("#solve-button");
+    helpButton.addEventListener("click", () => {
+        gameMessageElement.textContent = "Help Button Pressed.";
+        gameMessageElement.classList.add("message-good");
+        gameMessageElement.classList.remove("message-bad");
+    });
+    clearButton.addEventListener("click", () => {
+        gameMessageElement.textContent = "Clear Button Pressed.";
+        gameMessageElement.classList.add("message-good");
+        gameMessageElement.classList.remove("message-bad");
+    });
+    solveButton.addEventListener("click", () => {
+        gameMessageElement.textContent = "Solve Button Pressed.";
+        gameMessageElement.classList.remove("message-good");
+        gameMessageElement.classList.add("message-bad");
     });
 
     // Add click event listener to highlight the selected cell

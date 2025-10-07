@@ -145,3 +145,11 @@ button {
 .cell.empty-error {
     color: red;
 }
+
+.message-good {
+    color: green;
+}
+
+.message-bad {
+    color: red;
+}
