@@ -1,12 +1,11 @@
 const { invoke } = window.__TAURI__.tauri;
 
-let userInput = 0;
 let selectedCell = null;
 
-async function user_input() {
+async function user_input(keyPress) {
     // Learn more about Tauri commands at https://v1.tauri.app/v1/guides/features/command
     let grid_string =
-        await invoke("user_change", { user_input: parseInt(userInput),
+        await invoke("user_change", { user_input: parseInt(keyPress),
                                       cell_index: parseInt(selectedCell.getAttribute('data-index')) });
 
     for (let index = 0; index <= 80; index++) {
@@ -51,8 +50,7 @@ window.addEventListener("DOMContentLoaded", () => {
     document.addEventListener('keydown', (e) => {
         const dataIndex = parseInt(selectedCell.getAttribute('data-index'));
         if (selectedCell && e.key >= '1' && e.key <= '9') {
-            userInput = e.key;
-            user_input();
+            user_input(e.key);
         } else if (selectedCell &&
                    ((e.key === 'Tab') ||
                     (e.key === 'ArrowRight') ||
