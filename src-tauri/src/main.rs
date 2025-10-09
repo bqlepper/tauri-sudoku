@@ -38,7 +38,7 @@ fn user_change(state: State<'_, GameState>, cell_index: usize, user_input: u8) -
         let result = game.start_search();
         if let Err(out_message) = result {
             println!("{out_message}");
-            return out_message.to_string();
+            return out_message.to_string(); //TODO test this
         }
     } else if user_input == 12 {
         game.set_debug(true);
@@ -53,7 +53,7 @@ fn user_change(state: State<'_, GameState>, cell_index: usize, user_input: u8) -
             },
             Err(user_msg) => {
                 println!("Bad input: {user_msg}");
-                return "Bad input: {user_msg}".to_string();
+                return format!("Bad input: {user_msg}");
             }
         }
     }
