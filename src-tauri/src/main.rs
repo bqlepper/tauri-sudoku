@@ -31,6 +31,21 @@ fn user_change(state: State<'_, GameState>, cell_index: usize, user_input: u8) -
     if user_input == 0 {
         game.user_delete_value(cell_index / 9, cell_index % 9);
         game.print_grid();
+    } else if user_input == 10 {
+        game.clear();
+        game.print_grid();
+    } else if user_input == 11 {
+        let result = game.start_search();
+        if let Err(out_message) = result {
+            println!("{out_message}");
+            return out_message.to_string();
+        }
+    } else if user_input == 12 {
+        game.set_debug(true);
+        game.print_grid();
+    } else if user_input == 13 {
+        game.set_debug(false);
+        game.print_grid();
     } else {
         match game.user_set_value(cell_index / 9, cell_index % 9, user_input) {
             Ok(_) => {
@@ -38,6 +53,7 @@ fn user_change(state: State<'_, GameState>, cell_index: usize, user_input: u8) -
             },
             Err(user_msg) => {
                 println!("Bad input: {user_msg}");
+                return "Bad input: {user_msg}".to_string();
             }
         }
     }

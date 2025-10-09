@@ -3,12 +3,35 @@ const { invoke } = window.__TAURI__.tauri;
 let gameMessageElement;
 let selectedCell = null;
 
+const clear_input = '10';
+const solve_input = '11';
+const debug_on = '12';
+const debug_off = '13';
+
 async function user_input(keyPress) {
     // Learn more about Tauri commands at https://v1.tauri.app/v1/guides/features/command
     let grid_string =
         await invoke("user_change", { user_input: parseInt(keyPress),
                                       cell_index: parseInt(selectedCell.getAttribute('data-index')) });
 
+    // Check for error message
+    if ((grid_string.charAt(0) !== '-') &&
+        (grid_string.charAt(0) !== 'u') &&
+        (grid_string.charAt(0) !== 's')) {
+        gameMessageElement.textContent = grid_string;
+        gameMessageElement.classList.remove("message-good");
+        gameMessageElement.classList.add("message-bad");
+        return;
+    }
+
+    gameMessageElement.textContent = "";
+    gameMessageElement.classList.remove("message-good");
+    gameMessageElement.classList.remove("message-bad");
+    // Parse the return string that represents the grid state
+    // The string is 162 characters long, representing 81 cells
+    // Each cell is represented by two characters:
+    // First character: 'u' for user-set, 's' for solved
+    // Second character: '0' for empty, '1'-'9' for numbers, 'x' for error (invalid input)
     for (let index = 0; index <= 80; index++) {
         let nextCell = document.querySelector(`.cell[data-index="${index}"]`);
         if (grid_string.charAt((index*2)+1) === '0') {
@@ -32,23 +55,16 @@ async function user_input(keyPress) {
 
 window.addEventListener("DOMContentLoaded", () => {
     gameMessageElement = document.querySelector("#game-message");
-    const helpButton = document.querySelector("#help-button");
     const clearButton = document.querySelector("#clear-button");
     const solveButton = document.querySelector("#solve-button");
-    helpButton.addEventListener("click", () => {
-        gameMessageElement.textContent = "Help Button Pressed.";
-        gameMessageElement.classList.add("message-good");
-        gameMessageElement.classList.remove("message-bad");
-    });
     clearButton.addEventListener("click", () => {
-        gameMessageElement.textContent = "Clear Button Pressed.";
-        gameMessageElement.classList.add("message-good");
-        gameMessageElement.classList.remove("message-bad");
+        user_input(clear_input);
     });
     solveButton.addEventListener("click", () => {
-        gameMessageElement.textContent = "Solve Button Pressed.";
-        gameMessageElement.classList.remove("message-good");
-        gameMessageElement.classList.add("message-bad");
+        gameMessageElement.textContent = "Searching for a solution.  Hang on...";
+        gameMessageElement.classList.add("message-good");
+        gameMessageElement.classList.remove("message-bad");
+        user_input(solve_input);
     });
 
     // Add click event listener to highlight the selected cell
@@ -65,29 +81,40 @@ window.addEventListener("DOMContentLoaded", () => {
     // Add keyboard event listener to set values in the selected cell
     document.addEventListener('keydown', (e) => {
         const dataIndex = parseInt(selectedCell.getAttribute('data-index'));
-        if (selectedCell && e.key >= '1' && e.key <= '9') {
-            user_input(e.key);
-        } else if (selectedCell &&
-                   ((e.key === 'Tab') ||
-                    (e.key === 'ArrowRight') ||
-                    (e.key === 'ArrowLeft') ||
-                    (e.key === 'ArrowUp') ||
-                    (e.key === 'ArrowDown'))) {
-            let nextIndex;
-            if (e.key === 'ArrowLeft') {
-                nextIndex = (dataIndex - 1 + 81) % 81;
-            } else if (e.key === 'Tab' || e.key === 'ArrowRight') {
-                nextIndex = (dataIndex + 1) % 81;
-            } else if (e.key === 'ArrowDown') {
-                nextIndex = (dataIndex + 9) % 81;
-            } else if (e.key === 'ArrowUp') {
-                nextIndex = (dataIndex - 9 + 81) % 81;
-            }
-            const nextCell = document.querySelector(`.cell[data-index="${nextIndex}"]`);
-            if (nextCell) {
-                selectedCell.classList.remove('selected');
-                selectedCell = nextCell;
-                selectedCell.classList.add('selected');
+        if (selectedCell) {
+            if (e.key >= '0' && e.key <= '9') {
+                user_input(e.key);
+            } else if (e.key === 'Backspace' || e.key === 'Delete') {
+                user_input('0');
+            } else if (e.key === 'C' || e.key === 'c') {
+                user_input(clear_input);
+            } else if (e.key === 'S' || e.key === 's') {
+                user_input(solve_input);
+            } else if (e.key === 'D' || e.key === 'd') {
+                user_input(debug_on);
+            } else if (e.key === 'O' || e.key === 'o') {
+                user_input(debug_off);
+            } else if ((e.key === 'Tab') ||
+                       (e.key === 'ArrowRight') ||
+                       (e.key === 'ArrowLeft') ||
+                       (e.key === 'ArrowUp') ||
+                       (e.key === 'ArrowDown')) {
+                let nextIndex;
+                if (e.key === 'ArrowLeft') {
+                    nextIndex = (dataIndex - 1 + 81) % 81;
+                } else if (e.key === 'Tab' || e.key === 'ArrowRight') {
+                    nextIndex = (dataIndex + 1) % 81;
+                } else if (e.key === 'ArrowDown') {
+                    nextIndex = (dataIndex + 9) % 81;
+                } else if (e.key === 'ArrowUp') {
+                    nextIndex = (dataIndex - 9 + 81) % 81;
+                }
+                const nextCell = document.querySelector(`.cell[data-index="${nextIndex}"]`);
+                if (nextCell) {
+                    selectedCell.classList.remove('selected');
+                    selectedCell = nextCell;
+                    selectedCell.classList.add('selected');
+                }
             }
         }
     });
