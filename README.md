@@ -1,8 +1,7 @@
 # TODOs
 
-- And can we pass in something to say whether or not to do the GUI or not (just do command line)?
-- Put in a lot of the rust sudoku backend stuff
-- Test passing back and printing a whole grid
+- Can we pass in something to say whether or not to do the GUI or not (just do command line)?
+- Better, more complete debug output showing all values
 - Why do cells get bigger when a number is put in.  Stay rigid size, cells
 
 # To Build and Run in Development Mode

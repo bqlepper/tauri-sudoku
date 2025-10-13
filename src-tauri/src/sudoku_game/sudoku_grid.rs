@@ -100,6 +100,9 @@ impl Grid {
 
     pub(super) fn clone(&self) -> Grid {
         let mut new_grid = Grid::new();
+        if self.debug_output {
+            new_grid.debug_output = true;
+        }
         new_grid.replay_user_settings(self.get_user_settings());
         new_grid
     }
@@ -113,33 +116,12 @@ impl Grid {
         }
     }
 
-    //BQL TODO
-    //// returns the remaining potential values in a cell.  If already solved return empty vector.
-    //pub(super) fn get_values(&self, row: usize, column: usize) -> Vec<u8> {
-    //    self.grid[row][column].get_values()
-    //}
-
     // returns true if every cell is solved, false otherwise.
     pub(super) fn is_solved(&self) -> bool {
         self.grid.iter().flat_map(|row| row.iter()).all(|cell| {
             cell.is_solved()
         })
     }
-
-    //BQL TODO
-    //// returns true if specific cell is solved, false otherwise.
-    //pub(super) fn is_cell_solved(&self, row: usize, column: usize) -> bool {
-    //    self.grid[row][column].is_solved()
-    //}
-
-    //BQL TODO
-    //// Removes a potential value from a cell
-    //pub(super) fn remove_potential_value(&mut self, row: usize, column: usize, value: u8) -> Result<bool, String> {
-    //    match self.grid[row][column].remove_value(value) {
-    //        Err(()) => return Err(format!("Cannot remove {value} from row {}, column {}!", row+1, column+1)),
-    //        Ok(removed_value) => return Ok(removed_value),
-    //    }
-    //}
 
     // Removes any solved cell values from all applicable rows, columns, and boxes
     fn remove_solved_values(&mut self) -> Result<bool, String> {
@@ -191,8 +173,7 @@ impl Grid {
     }
 
     // Looks for rows, columns, and boxes that have only 1 cell that can be a particular value
-    // BQL TODO I use a lot of local variables in this function and it has very, very similar code repeated.
-    // BQL TODO I probably could refactor significantly.
+    // BQL TODO I need to refactor this function.  I use a lot of local variables and  a lot of similar code repeated.
     fn single_values(&mut self) -> Result<bool, String> {
         let mut result = false;
         let mut value_count: usize;
@@ -323,6 +304,8 @@ impl Grid {
                     }
                 }
 
+                // Shouldn't be able to have more partners than potential values
+                assert!(partners.len() < p_count, "Too many partners found in row for row {row}, column {column}!");
                 // If enough partners were found, remove those values from other cells in this row
                 if partners.len() >= p_count-1 {
                     match self.remove_partners(self.grid[row][column].get_values(), &non_partners) {
@@ -346,8 +329,10 @@ impl Grid {
                     }
                 }
 
+                // Shouldn't be able to have more partners than potential values
+                assert!(partners.len() < p_count, "Too many partners found in column for  row {row}, column {column}!");
                 // If enough partners were found, remove those values from the other cells in this column
-                if partners.len() >= p_count-1 {
+                if partners.len() == p_count-1 {
                     match self.remove_partners(self.grid[row][column].get_values(), &non_partners) {
                         Ok(something_changed) => result |= something_changed,
                         Err(error_out) => return Err(format!("Error partner columns: row {row}, column, {column}: {error_out}")),
@@ -372,8 +357,10 @@ impl Grid {
                     }
                 }
 
-                // Run the checker on this box
-                if partners.len() >= p_count-1 {
+                // Shouldn't be able to have more partners than potential values
+                assert!(partners.len() < p_count, "Too many partners found in box for  row {row}, column {column}!");
+                // If enough partners were found, remove those values from the other cells in this box
+                if partners.len() == p_count-1 {
                     match self.remove_partners(self.grid[row][column].get_values(), &non_partners) {
                         Ok(something_changed) => result |= something_changed,
                         Err(error_out) => return Err(format!("Error partner cells: row {row}, column, {column}: {error_out}")),
@@ -386,6 +373,37 @@ impl Grid {
         }
 
         Ok(result)
+    }
+
+    // Try all remaining potential values and detect if they lead to an error situation (cell with no potential values)
+    // If so, remove that potential value from the cell and run all the checks again.)
+    fn run_try_checks (&mut self) -> bool {
+        let mut result = false;
+        // Find unsolved cells
+        for row in 0..GRID_SIZE {
+            for column in 0..GRID_SIZE {
+                if self.grid[row][column].is_solved() {
+                    continue;
+                }
+                for value in self.grid[row][column].get_value_list() {
+                    let mut trial_grid = self.clone();
+                    if let Ok(changed) = trial_grid.set_value(row, column, value) {
+                        if changed {
+                            if let Ok(_) = trial_grid.run_all_checks() { continue; }
+                        }
+                    }
+
+                    if self.debug_output {
+                        println!("Found bad value {value} in row {row}, column {column}");
+                    }
+
+                    let remove_result = self.grid[row][column].remove_value(value);
+                    assert!(remove_result.is_ok(), "Unexpected error removing value {value} from row {row}, column {column}!");
+                    result = true;
+                }
+            }
+        }
+        result
     }
 
     pub(super) fn run_all_checks(&mut self) -> Result<(), String> {
@@ -443,8 +461,20 @@ impl Grid {
                 self.print_grid();
             }
 
-            if !any_values_removed && !any_new_sets && !any_partners_removed { break; }
+            // These try-and-check tests shouldn't be started until there are many potential values removed
+            // 17 is supposedly the minimum number of clues for a valid Sudoku puzzle, so that is probably where
+            // I should start, but I thought I would try a little smaller number. 
+            let mut any_try_checks_removed = false;
+            if self.get_user_settings().len() >= 15 {
+                any_try_checks_removed = self.run_try_checks();
+                // BQL TODO am I always checking and blocking any set values that cause an error (no potential values in any cell)?
+            }
 
+            if !any_values_removed &&
+               !any_new_sets &&
+               !any_partners_removed &&
+               !any_try_checks_removed
+                { break; }
         }
 
         Ok(())
@@ -461,35 +491,96 @@ impl Grid {
     // Prints the current state of the Sudoku grid to the command line
     pub(super) fn print_grid(&self) {
         println!();
-        for (row, row_arr) in self.grid.iter().enumerate() {
-            if row != 0 && row%3 == 0
-            {
-                if self.debug_output {
-                    println!("{}", "---------------+---------------+---------------".bright_cyan());
-                } else {
-                    println!("{}", "---------+---------+---------".bright_cyan());
+        if self.debug_output {
+            for (row, row_arr) in self.grid.iter().enumerate() {
+                if row != 0 && row%3 == 0
+                {
+                    println!("{}", "------------+-----------+-----------".bright_cyan());
+                }
+
+                for row_index in 0..3 {
+                    for (column, val) in row_arr.iter().enumerate() {
+                        if column != 0 && column%3 == 0
+                        {
+                            print!("{}", "|".bright_cyan());
+                        } else {
+                            print!(" ");
+                        }
+                        let mut chars: Vec<char> = vec![' ', ' ', ' '];
+                        match val.get_value() {
+                            Err(_) => print!("{}", "XXX".bright_red()),
+                            Ok(value) => {
+                                if self.grid[row][column].is_set_by_user() {
+                                    if row_index == 0 {
+                                        if value == 1 { chars[0] = '1' };
+                                        if value == 2 { chars[1] = '2' };
+                                        if value == 3 { chars[2] = '3' };
+                                    } else if row_index == 1 {
+                                        if value == 4 { chars[0] = '4' };
+                                        if value == 5 { chars[1] = '5' };
+                                        if value == 6 { chars[2] = '6' };
+                                    } else if row_index == 2 {
+                                        if value == 7 { chars[0] = '7' };
+                                        if value == 8 { chars[1] = '8' };
+                                        if value == 9 { chars[2] = '9' };
+                                    }
+                                } else if value == 0 {
+                                    chars[0] = '-';
+                                    chars[1] = '-';
+                                    chars[2] = '-';
+                                    if row_index == 0 {
+                                        if self.grid[row][column].is_value_valid(1) { chars[0] = '1' };
+                                        if self.grid[row][column].is_value_valid(2) { chars[1] = '2' };
+                                        if self.grid[row][column].is_value_valid(3) { chars[2] = '3' };
+                                    } else if row_index == 1 {
+                                        if self.grid[row][column].is_value_valid(4) { chars[0] = '4' };
+                                        if self.grid[row][column].is_value_valid(5) { chars[1] = '5' };
+                                        if self.grid[row][column].is_value_valid(6) { chars[2] = '6' };
+                                    } else if row_index == 2 {
+                                        if self.grid[row][column].is_value_valid(7) { chars[0] = '7' };
+                                        if self.grid[row][column].is_value_valid(8) { chars[1] = '8' };
+                                        if self.grid[row][column].is_value_valid(9) { chars[2] = '9' };
+                                    }
+                                } else {
+                                    if row_index == 0 {
+                                        if value == 1 { chars[0] = '1' };
+                                        if value == 2 { chars[1] = '2' };
+                                        if value == 3 { chars[2] = '3' };
+                                    } else if row_index == 1 {
+                                        if value == 4 { chars[0] = '4' };
+                                        if value == 5 { chars[1] = '5' };
+                                        if value == 6 { chars[2] = '6' };
+                                    } else if row_index == 2 {
+                                        if value == 7 { chars[0] = '7' };
+                                        if value == 8 { chars[1] = '8' };
+                                        if value == 9 { chars[2] = '9' };
+                                    }
+                                }
+                            },
+                        }
+                        let print_string: String = chars.into_iter().collect();
+                        print!("{}", print_string.bright_yellow());
+                    }
+                    println!();
+                    if row_index == 2 {
+                        println!("{}", "------------+-----------+-----------".bright_cyan());
+                    }
                 }
             }
-
-            for (column, val) in row_arr.iter().enumerate() {
-                if column != 0 && column%3 == 0
+        } else {
+            for (row, row_arr) in self.grid.iter().enumerate() {
+                if row != 0 && row%3 == 0
                 {
-                    print!("{} ", "|".bright_cyan());
-                } else {
-                    print!(" ");
+                    println!("{}", "---------+---------+---------".bright_cyan());
                 }
-                if self.debug_output {
-                    match val.get_debug_value() {
-                        Err(_) => print!("{} ", "X".bright_red()),
-                        Ok(value) => {
-                            if self.grid[row][column].is_set_by_user() {
-                                print!("{} ", format!("{:03X}", value).bright_green());
-                            } else {
-                                print!("{} ", format!("{:03X}", value).bright_yellow());
-                            }
-                        },
+
+                for (column, val) in row_arr.iter().enumerate() {
+                    if column != 0 && column%3 == 0
+                    {
+                        print!("{} ", "|".bright_cyan());
+                    } else {
+                        print!(" ");
                     }
-                } else {
                     match val.get_value() {
                         Err(_) => print!("{} ", "X".bright_red()),
                         Ok(value) => {
@@ -503,6 +594,7 @@ impl Grid {
                         },
                     }
                 }
+                println!();
             }
             println!();
         }
