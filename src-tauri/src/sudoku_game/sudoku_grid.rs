@@ -309,12 +309,11 @@ impl Grid {
                     }
                 }
 
+                // Shouldn't be able to have more partners than potential values
                 if partners.len() >= p_count {
-                    println!("Error!!! Row {row}, Column {column}, p_count {p_count}, Len {}, Potential Values: {:?}, Partners: {:?}", partners.len(), self.grid[row][column].get_value_list(), partners);
+                    return Err(format!("Too many partners found in row for row {row}, column, {column}"));
                 }
 
-                // Shouldn't be able to have more partners than potential values
-                assert!(partners.len() < p_count, "Too many partners found in row for row {row}, column {column}, {p_count}!");
                 // If enough partners were found, remove those values from other cells in this row
                 if partners.len() == p_count-1 {
                     match self.remove_partners(self.grid[row][column].get_values(), &non_partners) {
@@ -338,12 +337,11 @@ impl Grid {
                     }
                 }
 
+                // Shouldn't be able to have more partners than potential values
                 if partners.len() >= p_count {
-                    println!("Error!!! Row {row}, Column {column}, p_count {p_count}, Len {}, Potential Values: {:?}, Partners: {:?}", partners.len(), self.grid[row][column].get_value_list(), partners);
+                    return Err(format!("Too many partners found in column for row {row}, column, {column}"));
                 }
 
-                // Shouldn't be able to have more partners than potential values
-                assert!(partners.len() < p_count, "Too many partners found in column for  row {row}, column {column}!");
                 // If enough partners were found, remove those values from the other cells in this column
                 if partners.len() == p_count-1 {
                     match self.remove_partners(self.grid[row][column].get_values(), &non_partners) {
@@ -370,12 +368,11 @@ impl Grid {
                     }
                 }
 
+                // Shouldn't be able to have more partners than potential values
                 if partners.len() >= p_count {
-                    println!("Error!!! Row {row}, Column {column}, p_count {p_count}, Len {}, Potential Values: {:?}, Partners: {:?}", partners.len(), self.grid[row][column].get_value_list(), partners);
+                    return Err(format!("Too many partners found in box for row {row}, column, {column}"));
                 }
 
-                // Shouldn't be able to have more partners than potential values
-                assert!(partners.len() < p_count, "Too many partners found in box for  row {row}, column {column}!");
                 // If enough partners were found, remove those values from the other cells in this box
                 if partners.len() == p_count-1 {
                     match self.remove_partners(self.grid[row][column].get_values(), &non_partners) {
@@ -410,7 +407,7 @@ impl Grid {
                     if let Ok(changed) = trial_grid.set_value(row, column, value) {
                         if changed {
                             if let Ok(_) = trial_grid.run_all_checks() {
-                                continue;
+                                continue; // This value is OK, move on to the next value
                             }
                         }
                     }
@@ -421,9 +418,14 @@ impl Grid {
 
                     let remove_result = self.grid[row][column].remove_value(value);
                     assert!(remove_result.is_ok(), "Unexpected error removing value {value} from row {row}, column {column}!");
+                    let after_remove_result = self.run_all_checks();
+                    assert!(after_remove_result.is_ok(), "Unexpected error running checks after removing value {value} from row {row}, column {column}!");
                     result = true;
+                    break; // Need to restart the whole process since the grid has changed
                 }
+                if result { break }; // Need to restart the whole process since the grid has changed
             }
+            if result { break }; // Need to restart the whole process since the grid has changed
         }
         //BQL TODO if self.debug_output {
             if result {
