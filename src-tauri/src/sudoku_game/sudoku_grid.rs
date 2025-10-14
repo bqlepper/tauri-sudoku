@@ -14,20 +14,6 @@ fn get_box_dimensions(row: usize, column: usize) -> (usize, usize, usize, usize)
     (start_row, end_row, start_column, end_column)
 }
 
-fn get_new_grid() -> [[Cell; GRID_SIZE]; GRID_SIZE] {
-    [
-        [ Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new() ],
-        [ Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new() ],
-        [ Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new() ],
-        [ Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new() ],
-        [ Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new() ],
-        [ Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new() ],
-        [ Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new() ],
-        [ Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new() ],
-        [ Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new() ],
-    ]
-}
-
 // Grid has all the sudoku rule checking functions and prints out the grid to the command line
 pub(super) struct Grid {
     grid: [[Cell; GRID_SIZE]; GRID_SIZE],
@@ -36,9 +22,40 @@ pub(super) struct Grid {
 
 impl Grid {
     pub(super) fn new() -> Grid {
+        let new_grid = [
+            [ Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new() ],
+            [ Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new() ],
+            [ Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new() ],
+            [ Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new() ],
+            [ Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new() ],
+            [ Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new() ],
+            [ Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new() ],
+            [ Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new() ],
+            [ Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new(), Cell::new() ],
+        ];
+
         Grid {
-            grid : get_new_grid(),
+            grid : new_grid,
             debug_output: false,
+        }
+    }
+
+    pub(super) fn clone(&self) -> Grid {
+        let new_grid = [
+            [ self.grid[0][0].clone(), self.grid[0][1].clone(), self.grid[0][2].clone(), self.grid[0][3].clone(), self.grid[0][4].clone(), self.grid[0][5].clone(), self.grid[0][6].clone(), self.grid[0][7].clone(), self.grid[0][8].clone() ],
+            [ self.grid[1][0].clone(), self.grid[1][1].clone(), self.grid[1][2].clone(), self.grid[1][3].clone(), self.grid[1][4].clone(), self.grid[1][5].clone(), self.grid[1][6].clone(), self.grid[1][7].clone(), self.grid[1][8].clone() ],
+            [ self.grid[2][0].clone(), self.grid[2][1].clone(), self.grid[2][2].clone(), self.grid[2][3].clone(), self.grid[2][4].clone(), self.grid[2][5].clone(), self.grid[2][6].clone(), self.grid[2][7].clone(), self.grid[2][8].clone() ],
+            [ self.grid[3][0].clone(), self.grid[3][1].clone(), self.grid[3][2].clone(), self.grid[3][3].clone(), self.grid[3][4].clone(), self.grid[3][5].clone(), self.grid[3][6].clone(), self.grid[3][7].clone(), self.grid[3][8].clone() ],
+            [ self.grid[4][0].clone(), self.grid[4][1].clone(), self.grid[4][2].clone(), self.grid[4][3].clone(), self.grid[4][4].clone(), self.grid[4][5].clone(), self.grid[4][6].clone(), self.grid[4][7].clone(), self.grid[4][8].clone() ],
+            [ self.grid[5][0].clone(), self.grid[5][1].clone(), self.grid[5][2].clone(), self.grid[5][3].clone(), self.grid[5][4].clone(), self.grid[5][5].clone(), self.grid[5][6].clone(), self.grid[5][7].clone(), self.grid[5][8].clone() ],
+            [ self.grid[6][0].clone(), self.grid[6][1].clone(), self.grid[6][2].clone(), self.grid[6][3].clone(), self.grid[6][4].clone(), self.grid[6][5].clone(), self.grid[6][6].clone(), self.grid[6][7].clone(), self.grid[6][8].clone() ],
+            [ self.grid[7][0].clone(), self.grid[7][1].clone(), self.grid[7][2].clone(), self.grid[7][3].clone(), self.grid[7][4].clone(), self.grid[7][5].clone(), self.grid[7][6].clone(), self.grid[7][7].clone(), self.grid[7][8].clone() ],
+            [ self.grid[8][0].clone(), self.grid[8][1].clone(), self.grid[8][2].clone(), self.grid[8][3].clone(), self.grid[8][4].clone(), self.grid[8][5].clone(), self.grid[8][6].clone(), self.grid[8][7].clone(), self.grid[8][8].clone() ]
+        ];
+
+        Grid {
+            grid: new_grid,
+            debug_output: self.debug_output,
         }
     }
 
@@ -86,33 +103,21 @@ impl Grid {
         user_settings
     }
 
-    fn replay_user_settings(&mut self, user_settings: Vec<(usize, usize, u8)>) {
-        self.clear(); // Clear the grid
-        for user_setting in user_settings {
-            let result = self.set_value(user_setting.0, user_setting.1, user_setting.2);
-            assert!(result.is_ok(), "Unexpected error resetting a user value! Row {}, Column {}, Value {}", user_setting.0, user_setting.1, user_setting.2);
-            self.grid[user_setting.0][user_setting.1].lock_set_by_user();
-        }
-
-        let result = self.run_all_checks();
-        assert!(result.is_ok(), "Unexpected error running checks due to resetting a user value!");
-    }
-
-    pub(super) fn clone(&self) -> Grid {
-        let mut new_grid = Grid::new();
-        if self.debug_output {
-            new_grid.debug_output = true;
-        }
-        new_grid.replay_user_settings(self.get_user_settings());
-        new_grid
-    }
-
     pub(super) fn user_delete_value(&mut self, row: usize, column: usize) {
         // Don't let the user delete a value that they have not already set
         if self.grid[row][column].is_set_by_user() {
-            self.grid[row][column].clear();
-            // replay the remaining user settings on the cleared grid
-            self.replay_user_settings(self.get_user_settings());
+            self.grid[row][column].clear();  //Clear the cells user settings
+            let replay_user_settings = self.get_user_settings(); // Save all the other user settings
+            self.clear(); // Clear the whole grid
+            for user_setting in replay_user_settings { // Replay all the other user settings
+                let result = self.set_value(user_setting.0, user_setting.1, user_setting.2);
+                assert!(result.is_ok(), "Unexpected error resetting a user value! Row {}, Column {}, Value {}", user_setting.0, user_setting.1, user_setting.2);
+                self.grid[user_setting.0][user_setting.1].lock_set_by_user();
+            }
+
+            let result = self.run_all_checks();
+            assert!(result.is_ok(), "Unexpected error running checks due to resetting a user value!");
+            self.run_extra_checks();
         }
     }
 
@@ -304,10 +309,14 @@ impl Grid {
                     }
                 }
 
+                if partners.len() >= p_count {
+                    println!("Error!!! Row {row}, Column {column}, p_count {p_count}, Len {}, Potential Values: {:?}, Partners: {:?}", partners.len(), self.grid[row][column].get_value_list(), partners);
+                }
+
                 // Shouldn't be able to have more partners than potential values
-                assert!(partners.len() < p_count, "Too many partners found in row for row {row}, column {column}!");
+                assert!(partners.len() < p_count, "Too many partners found in row for row {row}, column {column}, {p_count}!");
                 // If enough partners were found, remove those values from other cells in this row
-                if partners.len() >= p_count-1 {
+                if partners.len() == p_count-1 {
                     match self.remove_partners(self.grid[row][column].get_values(), &non_partners) {
                         Ok(something_changed) => result |= something_changed,
                         Err(error_out) => return Err(format!("Error partner rows: row {row}, column, {column}: {error_out}")),
@@ -327,6 +336,10 @@ impl Grid {
                     } else {
                         non_partners.push((row2, column));
                     }
+                }
+
+                if partners.len() >= p_count {
+                    println!("Error!!! Row {row}, Column {column}, p_count {p_count}, Len {}, Potential Values: {:?}, Partners: {:?}", partners.len(), self.grid[row][column].get_value_list(), partners);
                 }
 
                 // Shouldn't be able to have more partners than potential values
@@ -357,6 +370,10 @@ impl Grid {
                     }
                 }
 
+                if partners.len() >= p_count {
+                    println!("Error!!! Row {row}, Column {column}, p_count {p_count}, Len {}, Potential Values: {:?}, Partners: {:?}", partners.len(), self.grid[row][column].get_value_list(), partners);
+                }
+
                 // Shouldn't be able to have more partners than potential values
                 assert!(partners.len() < p_count, "Too many partners found in box for  row {row}, column {column}!");
                 // If enough partners were found, remove those values from the other cells in this box
@@ -379,6 +396,9 @@ impl Grid {
     // If so, remove that potential value from the cell and run all the checks again.)
     fn run_try_checks (&mut self) -> bool {
         let mut result = false;
+        //BQL TODO if self.debug_output {
+            println!("Looking for bad values");
+        //BQL TODO }
         // Find unsolved cells
         for row in 0..GRID_SIZE {
             for column in 0..GRID_SIZE {
@@ -389,7 +409,9 @@ impl Grid {
                     let mut trial_grid = self.clone();
                     if let Ok(changed) = trial_grid.set_value(row, column, value) {
                         if changed {
-                            if let Ok(_) = trial_grid.run_all_checks() { continue; }
+                            if let Ok(_) = trial_grid.run_all_checks() {
+                                continue;
+                            }
                         }
                     }
 
@@ -403,6 +425,13 @@ impl Grid {
                 }
             }
         }
+        //BQL TODO if self.debug_output {
+            if result {
+                println!("Removed a bad value.");
+            } else {
+                println!("Did not find bad values");
+            }
+        //BQL TODO }
         result
     }
 
@@ -461,23 +490,26 @@ impl Grid {
                 self.print_grid();
             }
 
-            // These try-and-check tests shouldn't be started until there are many potential values removed
-            // 17 is supposedly the minimum number of clues for a valid Sudoku puzzle, so that is probably where
-            // I should start, but I thought I would try a little smaller number. 
-            let mut any_try_checks_removed = false;
-            if self.get_user_settings().len() >= 15 {
-                any_try_checks_removed = self.run_try_checks();
-                // BQL TODO am I always checking and blocking any set values that cause an error (no potential values in any cell)?
-            }
-
-            if !any_values_removed &&
-               !any_new_sets &&
-               !any_partners_removed &&
-               !any_try_checks_removed
+            if !any_values_removed && !any_new_sets && !any_partners_removed
                 { break; }
         }
 
         Ok(())
+    }
+
+    pub(super) fn run_extra_checks(&mut self) {
+
+        if self.debug_output {
+            println!("\n**** Starting extra checks loop ****");
+            self.print_grid();
+        }
+
+        loop {
+            // These try-and-check tests shouldn't be started until there are many potential values removed
+            // 17 is supposedly the minimum number of clues for a valid Sudoku puzzle, so that is probably where
+            // I should start, but I thought I would try a little smaller number.
+            if self.get_user_settings().len() < 15 || !self.run_try_checks() { break; }
+        }
     }
 
     // Returns false if this value was already set, otherwise returns true to indicate a change

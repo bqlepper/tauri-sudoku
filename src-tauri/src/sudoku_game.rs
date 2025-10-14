@@ -72,6 +72,7 @@ impl Game {
                             return Err(format!("{value} is not valid for row {} column {}!", row+1, column+1));
                         },
                         Ok(_) => {
+                            trial_grid.run_extra_checks();
                             trial_grid.lock_set_by_user(row, column);
                             self.grid = trial_grid;
                         },

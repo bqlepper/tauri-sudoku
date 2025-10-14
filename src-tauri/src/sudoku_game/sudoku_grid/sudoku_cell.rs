@@ -13,6 +13,13 @@ impl Cell {
         }
     }
 
+    pub(super) fn clone(&self) -> Cell {
+        let mut new_cell = Cell::new();
+        new_cell.pv = self.pv;
+        new_cell.set_by_user = self.set_by_user;
+        new_cell
+    }
+
     pub(super) fn get_values(&self) -> u16 { self.pv }
 
     pub(super) fn is_solved(&self) -> bool { self.pv.count_ones() == 1 }
@@ -47,7 +54,7 @@ impl Cell {
 
     // Return true if the passed in cell has only potential values that are also potential values in this cell
     pub(super) fn is_partner(&self, partner_value: u16) -> bool {
-        partner_value | self.pv == partner_value
+        self.pv & !partner_value == 0
     }
 
     pub(super) fn clear(&mut self) {
