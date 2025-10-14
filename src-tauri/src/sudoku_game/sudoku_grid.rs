@@ -393,9 +393,9 @@ impl Grid {
     // If so, remove that potential value from the cell and run all the checks again.)
     fn run_try_checks (&mut self) -> bool {
         let mut result = false;
-        //BQL TODO if self.debug_output {
+        if self.debug_output {
             println!("Looking for bad values");
-        //BQL TODO }
+        }
         // Find unsolved cells
         for row in 0..GRID_SIZE {
             for column in 0..GRID_SIZE {
@@ -413,27 +413,33 @@ impl Grid {
                     }
 
                     if self.debug_output {
-                        println!("Found bad value {value} in row {row}, column {column}");
+                        println!("Found a potential bad value {value} in row {row}, column {column}");
                     }
 
-                    let remove_result = self.grid[row][column].remove_value(value);
-                    assert!(remove_result.is_ok(), "Unexpected error removing value {value} from row {row}, column {column}!");
-                    let after_remove_result = self.run_all_checks();
-                    assert!(after_remove_result.is_ok(), "Unexpected error running checks after removing value {value} from row {row}, column {column}!");
-                    result = true;
-                    break; // Need to restart the whole process since the grid has changed
+                    let trial_remove_result = trial_grid.grid[row][column].remove_value(value);
+                    if trial_remove_result.is_ok() {
+                        let trial_after_remove_result = trial_grid.run_all_checks();
+                        if trial_after_remove_result.is_ok() {
+                            let remove_result = self.grid[row][column].remove_value(value);
+                            assert!(remove_result.is_ok(), "Unexpected error removing value {value} from row {row}, column {column}!");
+                            let after_remove_result = self.run_all_checks();
+                            assert!(after_remove_result.is_ok(), "Unexpected error running checks after removing value {value} from row {row}, column {column}!");
+                            result =   true;
+                            break; // Need to restart the whole process since the grid has changed
+                        }
+                    }
                 }
                 if result { break }; // Need to restart the whole process since the grid has changed
             }
             if result { break }; // Need to restart the whole process since the grid has changed
         }
-        //BQL TODO if self.debug_output {
+        if self.debug_output {
             if result {
                 println!("Removed a bad value.");
             } else {
                 println!("Did not find bad values");
             }
-        //BQL TODO }
+        }
         result
     }
 
