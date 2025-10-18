@@ -4,6 +4,7 @@ use sudoku_cell::Cell;
 pub mod sudoku_cell;
 
 pub(super) const GRID_SIZE: usize = 9;
+const START_EXTRA_CHECKS: usize = 16;
 
 // Calculates the dimensions of the 3x3 box that contains the input row and column
 fn get_box_dimensions(row: usize, column: usize) -> (usize, usize, usize, usize) {
@@ -528,12 +529,21 @@ impl Grid {
             // These try-and-check tests shouldn't be started until there are many potential values removed
             // 17 is supposedly the minimum number of clues for a valid Sudoku puzzle, so that is probably where
             // I should start, but I thought I would try a little smaller number.
-            if self.get_solved_count() < 15 || !self.run_try_checks() { break; }
+            if self.get_solved_count() < START_EXTRA_CHECKS || !self.run_try_checks() { break; }
         }
     }
 
+    pub(super) fn is_solvable (&self) -> bool {
+        if self.get_solved_count() < START_EXTRA_CHECKS {
+            return true;
+        }
+        let mut solutions: Vec<String> = Vec::new();
+        self.solution_search(self.clone(), &mut solutions, 1);
+        solutions.len() > 0
+    }
+
     // Recursive method to try all remaining potential values and count the number of solutions that are still valid
-    pub(super) fn solution_search (&self, in_grid: Grid, solutions: &mut Vec<String>, max_solutions: usize) {
+    fn solution_search (&self, in_grid: Grid, solutions: &mut Vec<String>, max_solutions: usize) {
 
         let mut next_grid = in_grid.clone();
 
