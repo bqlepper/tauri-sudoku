@@ -389,60 +389,6 @@ impl Grid {
         Ok(result)
     }
 
-    // Try all remaining potential values and detect if they lead to an error situation (cell with no potential values)
-    // If so, remove that potential value from the cell and run all the checks again.)
-    fn run_try_checks (&mut self) -> bool {
-        let mut result = false;
-        if self.debug_output {
-            println!("Looking for bad values");
-        }
-        // Find unsolved cells
-        for row in 0..GRID_SIZE {
-            for column in 0..GRID_SIZE {
-                if self.grid[row][column].is_solved() {
-                    continue;
-                }
-                for value in self.grid[row][column].get_value_list() {
-                    let mut trial_grid = self.clone();
-                    if let Ok(changed) = trial_grid.set_value(row, column, value) {
-                        if changed {
-                            if let Ok(_) = trial_grid.run_all_checks() {
-                                continue; // This value is OK, move on to the next value
-                            }
-                        }
-                    }
-
-                    if self.debug_output {
-                        println!("Found a potential bad value {value} in row {row}, column {column}");
-                    }
-
-                    let trial_remove_result = trial_grid.grid[row][column].remove_value(value);
-                    if trial_remove_result.is_ok() {
-                        let trial_after_remove_result = trial_grid.run_all_checks();
-                        if trial_after_remove_result.is_ok() {
-                            let remove_result = self.grid[row][column].remove_value(value);
-                            assert!(remove_result.is_ok(), "Unexpected error removing value {value} from row {row}, column {column}!");
-                            let after_remove_result = self.run_all_checks();
-                            assert!(after_remove_result.is_ok(), "Unexpected error running checks after removing value {value} from row {row}, column {column}!");
-                            result =   true;
-                            break; // Need to restart the whole process since the grid has changed
-                        }
-                    }
-                }
-                if result { break }; // Need to restart the whole process since the grid has changed
-            }
-            if result { break }; // Need to restart the whole process since the grid has changed
-        }
-        if self.debug_output {
-            if result {
-                println!("Removed a bad value.");
-            } else {
-                println!("Did not find bad values");
-            }
-        }
-        result
-    }
-
     pub(super) fn run_all_checks(&mut self) -> Result<(), String> {
 
         if self.debug_output {
@@ -505,6 +451,72 @@ impl Grid {
         Ok(())
     }
 
+    // Try all remaining potential values and detect if they lead to an error situation (cell with no potential values)
+    // If so, remove that potential value from the cell and run all the checks again.)
+    fn run_try_checks (&mut self) -> bool {
+        let mut result = false;
+        if self.debug_output {
+            println!("Looking for bad values");
+        }
+        // Find unsolved cells
+        for row in 0..GRID_SIZE {
+            for column in 0..GRID_SIZE {
+                if self.grid[row][column].is_solved() {
+                    continue;
+                }
+                for value in self.grid[row][column].get_value_list() {
+                    let mut trial_grid = self.clone();
+                    if let Ok(changed) = trial_grid.set_value(row, column, value) {
+                        if changed {
+                            if let Ok(_) = trial_grid.run_all_checks() {
+                                continue; // This value is OK, move on to the next value
+                            }
+                        }
+                    }
+
+                    if self.debug_output {
+                        println!("Found a potential bad value {value} in row {row}, column {column}");
+                    }
+
+                    let trial_remove_result = trial_grid.grid[row][column].remove_value(value);
+                    if trial_remove_result.is_ok() {
+                        let trial_after_remove_result = trial_grid.run_all_checks();
+                        if trial_after_remove_result.is_ok() {
+                            let remove_result = self.grid[row][column].remove_value(value);
+                            assert!(remove_result.is_ok(), "Unexpected error removing value {value} from row {row}, column {column}!");
+                            let after_remove_result = self.run_all_checks();
+                            assert!(after_remove_result.is_ok(), "Unexpected error running checks after removing value {value} from row {row}, column {column}!");
+                            result =   true;
+                            break; // Need to restart the whole process since the grid has changed
+                        }
+                    }
+                }
+                if result { break }; // Need to restart the whole process since the grid has changed
+            }
+            if result { break }; // Need to restart the whole process since the grid has changed
+        }
+        if self.debug_output {
+            if result {
+                println!("Removed a bad value.");
+            } else {
+                println!("Did not find bad values");
+            }
+        }
+        result
+    }
+
+    fn get_solved_count(&self) -> usize {
+        let mut solved_count = 0;
+        for row in 0..GRID_SIZE {
+            for column in 0..GRID_SIZE {
+                if self.grid[row][column].is_solved() {
+                    solved_count += 1;
+                }
+            }
+        }
+        solved_count
+    }
+
     pub(super) fn run_extra_checks(&mut self) {
 
         if self.debug_output {
@@ -516,7 +528,43 @@ impl Grid {
             // These try-and-check tests shouldn't be started until there are many potential values removed
             // 17 is supposedly the minimum number of clues for a valid Sudoku puzzle, so that is probably where
             // I should start, but I thought I would try a little smaller number.
-            if self.get_user_settings().len() < 15 || !self.run_try_checks() { break; }
+            if self.get_solved_count() < 15 || !self.run_try_checks() { break; }
+        }
+    }
+
+    // Recursive method to try all remaining potential values and count the number of solutions that are still valid
+    pub(super) fn solution_search (&self, in_grid: Grid, solutions: &mut Vec<String>, max_solutions: usize) {
+
+        let mut next_grid = in_grid.clone();
+
+        // Find first non-solved cell
+        for row in 0..GRID_SIZE {
+            for column in 0..GRID_SIZE {
+                for value in next_grid.grid[row][column].get_value_list() {
+                    match next_grid.set_value(row, column, value) {
+                        Err(_) => { continue; },
+                        Ok(changed) => {
+                            assert!(changed, "Value {} in row {}, column {} was already set!", value, row, column);
+                            match next_grid.run_all_checks() {
+                                Err(_) => { continue;},
+                                Ok(_) => {
+                                    next_grid.run_extra_checks();
+                                    if next_grid.is_solved() { // If we've found a possible solution
+                                        solutions.push(next_grid.get_grid());
+                                        println!("Found solution #{}: {}", solutions.len(), solutions.last().unwrap());
+                                        return;
+                                    } else {
+                                        self.solution_search(next_grid.clone(), solutions, max_solutions);
+                                        if solutions.len() >= max_solutions {
+                                            return;
+                                        }
+                                    }
+                                },
+                            }
+                        },
+                    }
+                }
+            }
         }
     }
 
@@ -640,3 +688,4 @@ impl Grid {
         }
     }
 }
+

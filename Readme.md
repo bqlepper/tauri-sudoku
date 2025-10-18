@@ -1,5 +1,7 @@
 # TODOs
 
+- I made everything public.  Need to evaluate all functions for privacy.
+- sudoku_grid.rs has way too many functions, need to break it up.
 - Why do cells get bigger when a number is put in.  Stay rigid size, cells
 
 # Getting started

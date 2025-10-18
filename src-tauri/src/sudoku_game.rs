@@ -73,6 +73,15 @@ impl Game {
                         },
                         Ok(_) => {
                             trial_grid.run_extra_checks();
+                            if trial_grid.is_solved() {
+                                println!("Puzzle is solved!");
+                            } else {
+                                let mut solution_found = Vec::new();
+                                trial_grid.solution_search(trial_grid.clone(), &mut solution_found, 1);
+                                if solution_found.len() == 0 {
+                                    return Err(format!("Setting {} at row {} column {} leads to no possible solutions!", value, row+1, column+1));
+                                }
+                            }
                             trial_grid.lock_set_by_user(row, column);
                             self.grid = trial_grid;
                         },
