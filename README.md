@@ -1,8 +1,10 @@
 # TODOs
 
-- Can we pass in something to say whether or not to do the GUI or not (just do command line)?
-- Better, more complete debug output showing all values
 - Why do cells get bigger when a number is put in.  Stay rigid size, cells
+
+# Getting started
+
+[Link to Tauri getting started page](https://v1.tauri.app/v1/guides/getting-started/setup/)
 
 # To Build and Run in Development Mode
 
@@ -43,4 +45,4 @@ This app was built using the Tauri + Vanilla template to allow for simple develo
 
 ## Recommended IDE Setup
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+[VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
