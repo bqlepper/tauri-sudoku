@@ -1,3 +1,5 @@
+use std::cmp::max;
+
 use colored::*;
 use sudoku_cell::Cell;
 
@@ -60,10 +62,25 @@ impl Grid {
         }
     }
 
+    // Clears out all cells.
     pub(super) fn clear(&mut self) {
         self.grid.iter_mut().flat_map(|row| row.iter_mut()).for_each(|cell| {
             cell.clear();
         });
+    }
+
+    // returns true if every cell is solved, false otherwise.
+    pub(super) fn is_solved(&self) -> bool {
+        self.grid.iter().flat_map(|row| row.iter()).all(|cell| {
+            cell.is_solved()
+        })
+    }
+
+    // returns true if every cell is valid, false otherwise.
+    pub(super) fn is_valid(&self) -> bool {
+        self.grid.iter().flat_map(|row| row.iter()).all(|cell| {
+            cell.is_valid()
+        })
     }
 
     pub(super) fn set_debug(&mut self, on: bool) { self.debug_output = on; }
@@ -120,13 +137,6 @@ impl Grid {
             assert!(result.is_ok(), "Unexpected error running checks due to resetting a user value!");
             self.run_extra_checks();
         }
-    }
-
-    // returns true if every cell is solved, false otherwise.
-    pub(super) fn is_solved(&self) -> bool {
-        self.grid.iter().flat_map(|row| row.iter()).all(|cell| {
-            cell.is_solved()
-        })
     }
 
     // Removes any solved cell values from all applicable rows, columns, and boxes
@@ -449,6 +459,7 @@ impl Grid {
                 { break; }
         }
 
+        assert!(self.is_valid(), "Left run_all_checks with OK status, but invalid grid!");
         Ok(())
     }
 
@@ -531,6 +542,7 @@ impl Grid {
             // I should start, but I thought I would try a little smaller number.
             if self.get_solved_count() < START_EXTRA_CHECKS || !self.run_try_checks() { break; }
         }
+        assert!(self.is_valid(), "Invalid after running extra checks!");
     }
 
     pub(super) fn is_solvable (&self) -> bool {
@@ -543,37 +555,54 @@ impl Grid {
     }
 
     // Recursive method to try all remaining potential values and count the number of solutions that are still valid
-    fn solution_search (&self, in_grid: Grid, solutions: &mut Vec<String>, max_solutions: usize) {
+    fn solution_search (&self,
+                        in_grid: Grid,
+                        solutions: &mut Vec<String>,
+                        max_solutions: usize) {
 
-        let mut next_grid = in_grid.clone();
+        assert!(self.is_valid(), "Called solution_search with invalid puzzle!");
+        assert!(!self.is_solved(), "Called solution_search with solvedd puzzle!");
+        assert!(solutions.len() < max_solutions, "Called solution_search with already enough solutions!");
 
         // Find first non-solved cell
-        for row in 0..GRID_SIZE {
-            for column in 0..GRID_SIZE {
-                for value in next_grid.grid[row][column].get_value_list() {
-                    match next_grid.set_value(row, column, value) {
-                        Err(_) => { continue; },
-                        Ok(changed) => {
-                            assert!(changed, "Value {} in row {}, column {} was already set!", value, row, column);
-                            match next_grid.run_all_checks() {
-                                Err(_) => { continue;},
-                                Ok(_) => {
-                                    next_grid.run_extra_checks();
-                                    if next_grid.is_solved() { // If we've found a possible solution
-                                        solutions.push(next_grid.get_grid());
-                                        println!("Found solution #{}: {}", solutions.len(), solutions.last().unwrap());
-                                        return;
-                                    } else {
-                                        self.solution_search(next_grid.clone(), solutions, max_solutions);
-                                        if solutions.len() >= max_solutions {
-                                            return;
-                                        }
-                                    }
-                                },
+        let mut row: usize = 0;
+        let mut column: usize = 0;
+        'outer: for check_row in 0..GRID_SIZE {
+            for check_column in 0..GRID_SIZE {
+                if in_grid.grid[check_row][check_column].is_solved() {
+                    continue;
+                } else {
+                    row = check_row;
+                    column = check_column;
+                    break 'outer;
+                }
+            }
+        }
+
+        for value in in_grid.grid[row][column].get_value_list() {
+            let mut next_grid = in_grid.clone();
+            next_grid.print_grid();
+            match next_grid.set_value(row, column, value) {
+                Err(_) => { continue; },
+                Ok(changed) => {
+                    assert!(changed, "Value {} in row {}, column {} was already set!", value, row, column);
+                    match next_grid.run_all_checks() {
+                        Err(_) => { continue;},
+                        Ok(_) => {
+                            next_grid.run_extra_checks();
+                            if next_grid.is_solved() { // If we've found a possible solution
+                                solutions.push(next_grid.get_grid());
+                                println!("Found solution #{}: {}", solutions.len(), solutions.last().unwrap());
+                                return;
+                            } else {
+                                self.solution_search(next_grid, solutions, max_solutions);
                             }
                         },
                     }
-                }
+                },
+            }
+            if solutions.len() >= max_solutions {
+                return;
             }
         }
     }

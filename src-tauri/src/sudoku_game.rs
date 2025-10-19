@@ -75,6 +75,7 @@ impl Game {
                             trial_grid.run_extra_checks();
                             if trial_grid.is_solved() {
                                 println!("Puzzle is solved!");
+                                self.grid = trial_grid;
                             } else if trial_grid.is_solvable() {
                                 trial_grid.lock_set_by_user(row, column);
                                 self.grid = trial_grid;

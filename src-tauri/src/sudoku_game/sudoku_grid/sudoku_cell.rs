@@ -24,6 +24,8 @@ impl Cell {
 
     pub(super) fn is_solved(&self) -> bool { self.pv.count_ones() == 1 }
 
+    pub(super) fn is_valid(&self) -> bool { self.pv.count_ones() >= 1 }
+
     pub(super) fn is_set_by_user(&self) -> bool { self.set_by_user }
 
     pub(super) fn potential_value_count(&self) -> usize { self.pv.count_ones().try_into().unwrap() }
