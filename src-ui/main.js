@@ -24,9 +24,8 @@ async function user_input(keyPress) {
         return;
     }
 
-    gameMessageElement.textContent = "";
-    gameMessageElement.classList.remove("message-good");
-    gameMessageElement.classList.remove("message-bad");
+    let solved = true;
+    let error_found = false;
     // Parse the return string that represents the grid state
     // The string is 162 characters long, representing 81 cells
     // Each cell is represented by two characters:
@@ -35,11 +34,13 @@ async function user_input(keyPress) {
     for (let index = 0; index <= 80; index++) {
         let nextCell = document.querySelector(`.cell[data-index="${index}"]`);
         if (grid_string.charAt((index*2)+1) === '0') {
+            solved = false;
             nextCell.textContent = '';
             nextCell.classList.remove('user-set');
             nextCell.classList.remove('solved');
             nextCell.classList.remove('empty-error');
         } else if (grid_string.charAt((index*2)+1) === 'x') {
+            error_found = true;
             nextCell.textContent = 'X';
             nextCell.classList.add('empty-error');
         } else {
@@ -50,6 +51,19 @@ async function user_input(keyPress) {
             }
             nextCell.textContent = grid_string.charAt((index*2)+1);
         }
+    }
+    if (error_found === true) {
+        gameMessageElement.textContent = "Oops!  Something is wrong";
+        gameMessageElement.classList.remove("message-good");
+        gameMessageElement.classList.add("message-bad");
+    } else if (solved === true) {
+        gameMessageElement.textContent = "Congratulations!  Puzzle Solved!";
+        gameMessageElement.classList.add("message-good");
+        gameMessageElement.classList.remove("message-bad");
+    } else {
+        gameMessageElement.textContent = "";
+        gameMessageElement.classList.remove("message-good");
+        gameMessageElement.classList.remove("message-bad");
     }
 }
 
@@ -83,6 +97,9 @@ window.addEventListener("DOMContentLoaded", () => {
         const dataIndex = parseInt(selectedCell.getAttribute('data-index'));
         if (selectedCell) {
             if (e.key >= '0' && e.key <= '9') {
+                gameMessageElement.textContent = "Processing Input.  Hang on...";
+                gameMessageElement.classList.add("message-good");
+                gameMessageElement.classList.remove("message-bad");
                 user_input(e.key);
             } else if (e.key === 'Backspace' || e.key === 'Delete') {
                 user_input('0');

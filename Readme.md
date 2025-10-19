@@ -1,5 +1,9 @@
 # TODOs
 
+- Test with all puzzles
+- Figure out how to better reflect the delay in processing.  Why does button press put up the Hold On... message but key presses do not?
+- Remove a bunch of the debug
+- Run with release and see if assertions are causing a lot of the delay
 - I made everything public.  Need to evaluate all functions for privacy.
 - sudoku_grid.rs has way too many functions, need to break it up.
 - Why do cells get bigger when a number is put in.  Stay rigid size, cells
