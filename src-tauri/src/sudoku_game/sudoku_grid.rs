@@ -554,6 +554,23 @@ impl Grid {
         solutions.len() > 0
     }
 
+    pub(super) fn count_solutions (&self) -> Result<usize, usize> {
+        if self.is_solved() {
+            println!("Already solved!!!!");
+            self.print_grid();
+            return Err(1);
+        }
+        let mut solutions: Vec<String> = Vec::new();
+        self.solution_search(self.clone(), &mut solutions, 5);
+        println!("Found {} solutions", solutions.len());
+        if solutions.len() >= 5 {
+            return Err(5);
+        } else if solutions.len() == 0 {
+            return Err(0);
+        }
+        Ok(solutions.len())
+    }
+
     // Recursive method to try all remaining potential values and count the number of solutions that are still valid
     fn solution_search (&self,
                         in_grid: Grid,
@@ -581,7 +598,6 @@ impl Grid {
 
         for value in in_grid.grid[row][column].get_value_list() {
             let mut next_grid = in_grid.clone();
-            next_grid.print_grid();
             match next_grid.set_value(row, column, value) {
                 Err(_) => { continue; },
                 Ok(changed) => {

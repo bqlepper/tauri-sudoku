@@ -27,18 +27,9 @@ impl Game {
         self.grid.clear();
     }
 
-    // Called to start a recursive brute force search
-    pub(super) fn start_search(&mut self) -> Result<(), &str> {
-        if self.grid.is_solved() {
-            return Err("No need for search, the puzzle is already solved.");
-        }
-        println!("BQL TODO - This needs to be implemented in Searcher class in thread");
-        Ok(())
-    }
-
-    // Called to manually stop the brute force solution search
-    pub(super) fn stop_search(&mut self) {
-        println!("BQL TODO - This needs to be implemented to stop Searcher class in thread");
+    // Called to start count for good solutions
+    pub(super) fn count_solutions(&mut self) -> Result<usize, usize> {
+        self.grid.count_solutions()
     }
 
     // Clear a value that a user has previously set

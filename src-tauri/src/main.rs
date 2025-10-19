@@ -35,10 +35,16 @@ fn user_change(state: State<'_, GameState>, cell_index: usize, user_input: u8) -
         game.clear();
         game.print_grid();
     } else if user_input == 11 {
-        let result = game.start_search();
-        if let Err(out_message) = result {
-            println!("{out_message}");
-            return out_message.to_string();
+        match game.count_solutions() {
+            Ok(count) => {
+                return format!("Solutions remaining: {}", count);
+            },
+            Err(count) => {
+                if count == 0 {
+                    return "No solutions remaining".to_string();
+                }
+                return format!("At least {} solutions remaining", count);
+            }
         }
     } else if user_input == 12 {
         game.set_debug(true);
@@ -108,14 +114,18 @@ fn go_command_line() {
                             continue;
                         }
                         "s" | "search" => {
-                            let result = game.start_search();
-                            if let Err(out_message) = result {
-                                println!("{out_message}");
+                            match game.count_solutions() {
+                                Ok(count) => {
+                                    println!("Solutions remaining: {}", count);
+                                },
+                                Err(count) => {
+                                    if count == 0 {
+                                        println!("No solutions remaining");
+                                    } else {
+                                        println!("At least {} solutions remaining", count);
+                                    }
+                                }
                             }
-                            continue;
-                        }
-                        "b" | "break" => { // BQL TODO this will not work until I figure out how to run the brut force search in a thread that can die when the user selects to stop the search.
-                            game.stop_search();
                             continue;
                         }
                         _ => {
