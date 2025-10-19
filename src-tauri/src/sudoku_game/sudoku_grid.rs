@@ -60,6 +60,14 @@ impl Grid {
         }
     }
 
+    fn replace(&mut self, grid_in: &[[Cell; 9]; 9]) {
+        for row in 0..GRID_SIZE {
+            for column in 0..GRID_SIZE {
+                self.grid[row][column] = grid_in[row][column].clone();
+            }
+        }
+    }
+
     // Clears out all cells.
     pub(super) fn clear(&mut self) {
         self.grid.iter_mut().flat_map(|row| row.iter_mut()).for_each(|cell| {
@@ -492,10 +500,7 @@ impl Grid {
                     if trial_remove_result.is_ok() {
                         let trial_after_remove_result = trial_grid.run_all_checks();
                         if trial_after_remove_result.is_ok() {
-                            let remove_result = self.grid[row][column].remove_value(value);
-                            assert!(remove_result.is_ok(), "Unexpected error removing value {value} from row {row}, column {column}!");
-                            let after_remove_result = self.run_all_checks();
-                            assert!(after_remove_result.is_ok(), "Unexpected error running checks after removing value {value} from row {row}, column {column}!");
+                            self.replace(&trial_grid.grid);
                             result =   true;
                             break; // Need to restart the whole process since the grid has changed
                         }
@@ -539,20 +544,29 @@ impl Grid {
                 }
             }
             assert!(self.is_valid(), "Invalid after running extra checks!");
-            let mut solutions: Vec<String> = Vec::new();
+        }
+    }
+
+    // Searches recursively for solutions.  If only 1 is found, the puzzle is solved.
+    // Stops immedieately if more than 1 solution is found.
+    pub(super) fn run_final_check(&mut self) {
+
+        if !self.is_solved() && self.get_solved_count() >= START_EXTRA_CHECKS {
+            let mut solutions: Vec<Grid> = Vec::new();
             self.solution_search(self.clone(), &mut solutions, 2);
             assert!(solutions.len() > 0, "No solutions found after running extra checks!");
             if solutions.len() == 1 {
-                
+                println!("Unique solution found in final check!");
+                self.replace(&solutions[0].grid);
             }
         }
     }
 
     pub(super) fn is_solvable (&self) -> bool {
-        if self.get_solved_count() < START_EXTRA_CHECKS {
+        if self.is_solved() || self.get_solved_count() < START_EXTRA_CHECKS {
             return true;
         }
-        let mut solutions: Vec<String> = Vec::new();
+        let mut solutions: Vec<Grid> = Vec::new();
         self.solution_search(self.clone(), &mut solutions, 1);
         solutions.len() > 0
     }
@@ -563,7 +577,7 @@ impl Grid {
             self.print_grid();
             return Err(1);
         }
-        let mut solutions: Vec<String> = Vec::new();
+        let mut solutions: Vec<Grid> = Vec::new();
         self.solution_search(self.clone(), &mut solutions, 5);
         println!("Found {} solutions", solutions.len());
         if solutions.len() >= 5 {
@@ -577,7 +591,7 @@ impl Grid {
     // Recursive method to try all remaining potential values and count the number of solutions that are still valid
     fn solution_search (&self,
                         in_grid: Grid,
-                        solutions: &mut Vec<String>,
+                        solutions: &mut Vec<Grid>,
                         max_solutions: usize) {
 
         assert!(self.is_valid(), "Called solution_search with invalid puzzle!");
@@ -610,7 +624,7 @@ impl Grid {
                         Ok(_) => {
                             next_grid.run_extra_checks();
                             if next_grid.is_solved() { // If we've found a possible solution
-                                solutions.push(next_grid.get_grid());
+                                solutions.push(next_grid.clone());
                                 return;
                             } else {
                                 self.solution_search(next_grid, solutions, max_solutions);

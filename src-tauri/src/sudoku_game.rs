@@ -64,6 +64,7 @@ impl Game {
                         },
                         Ok(_) => {
                             trial_grid.run_extra_checks();
+                            trial_grid.run_final_check();
                             if trial_grid.is_solved() {
                                 println!("Puzzle is solved!");
                                 self.grid = trial_grid;
