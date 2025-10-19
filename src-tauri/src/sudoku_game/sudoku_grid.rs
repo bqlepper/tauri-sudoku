@@ -1,5 +1,3 @@
-use std::cmp::max;
-
 use colored::*;
 use sudoku_cell::Cell;
 
@@ -531,18 +529,23 @@ impl Grid {
 
     pub(super) fn run_extra_checks(&mut self) {
 
-        if self.debug_output {
-            println!("\n**** Starting extra checks loop ****");
-            self.print_grid();
+        if self.get_solved_count() >= START_EXTRA_CHECKS {
+            loop {
+                // These try-and-check tests shouldn't be started until there are many potential values removed
+                // 17 is supposedly the minimum number of clues for a valid Sudoku puzzle, so that is probably where
+                // I should start, but I thought I would try a little smaller number.
+                if !self.run_try_checks() {
+                    break;
+                }
+            }
+            assert!(self.is_valid(), "Invalid after running extra checks!");
+            let mut solutions: Vec<String> = Vec::new();
+            self.solution_search(self.clone(), &mut solutions, 2);
+            assert!(solutions.len() > 0, "No solutions found after running extra checks!");
+            if solutions.len() == 1 {
+                
+            }
         }
-
-        loop {
-            // These try-and-check tests shouldn't be started until there are many potential values removed
-            // 17 is supposedly the minimum number of clues for a valid Sudoku puzzle, so that is probably where
-            // I should start, but I thought I would try a little smaller number.
-            if self.get_solved_count() < START_EXTRA_CHECKS || !self.run_try_checks() { break; }
-        }
-        assert!(self.is_valid(), "Invalid after running extra checks!");
     }
 
     pub(super) fn is_solvable (&self) -> bool {
@@ -608,7 +611,6 @@ impl Grid {
                             next_grid.run_extra_checks();
                             if next_grid.is_solved() { // If we've found a possible solution
                                 solutions.push(next_grid.get_grid());
-                                println!("Found solution #{}: {}", solutions.len(), solutions.last().unwrap());
                                 return;
                             } else {
                                 self.solution_search(next_grid, solutions, max_solutions);

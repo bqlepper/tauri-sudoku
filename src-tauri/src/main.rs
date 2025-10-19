@@ -15,7 +15,7 @@ struct GameState(Mutex<Game>);
 // It creates a Puzzle or a Puzzled based on user command line input.
 // Puzzle: Creates a sudoku Game and handles user interaction with a GUI for the sudoku Game.
 // Puzzled: Creates a sudoku Game and handles user interaction with command-line-only used for debug.
-// Game: Creates a Grid.  Keeps track of the user sudoku entries and runs the brute force solver algorithm.
+// Game: Creates a Grid.  Keeps track of the user sudoku entries and has a recursive solution solver.
 // Grid: A 9x9 array of cells in a sudoku puzzle.
 // Cell: The smallest entity in a Sudoku puzzle that holds one value 1-9
 // Box: A 3x3 array of cells.  There are 9 of these in a sudoku puzzle.

@@ -56,11 +56,11 @@ async function user_input(keyPress) {
 window.addEventListener("DOMContentLoaded", () => {
     gameMessageElement = document.querySelector("#game-message");
     const clearButton = document.querySelector("#clear-button");
-    const solveButton = document.querySelector("#solve-button");
+    const searchButton = document.querySelector("#search-button");
     clearButton.addEventListener("click", () => {
         user_input(clear_input);
     });
-    solveButton.addEventListener("click", () => {
+    searchButton.addEventListener("click", () => {
         gameMessageElement.textContent = "Searching for a solution.  Hang on...";
         gameMessageElement.classList.add("message-good");
         gameMessageElement.classList.remove("message-bad");
