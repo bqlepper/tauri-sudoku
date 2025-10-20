@@ -1,6 +1,5 @@
 # TODOs
 
-- Remove a bunch of the debug
 - Run with release and see if assertions are causing a lot of the delay
 - I made everything public.  Need to evaluate all functions for privacy.
 - sudoku_grid.rs has way too many functions, need to break it up.

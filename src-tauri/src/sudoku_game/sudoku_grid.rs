@@ -408,11 +408,6 @@ impl Grid {
 
     pub(super) fn run_all_checks(&mut self) -> Result<(), String> {
 
-        if self.debug_output {
-            println!("\n**** Starting checks loop ****");
-            self.print_grid();
-        }
-
         loop {
             let mut any_values_removed = false;
             loop {
@@ -420,15 +415,6 @@ impl Grid {
                     Err(out_msg) => return Err(out_msg),
                     Ok(something_removed) => if something_removed { any_values_removed = true; } else { break; },
                 }
-            }
-
-            if self.debug_output {
-                if any_values_removed {
-                    println!("\n**** After removing values ****");
-                } else {
-                    println!("\n**** No values removed ****");
-                }
-                self.print_grid();
             }
 
             let mut any_new_sets = false;
@@ -439,26 +425,12 @@ impl Grid {
                 }
             }
 
-            if self.debug_output {
-                if any_new_sets {
-                    println!("\n**** After setting single values ****");
-                } else {
-                    println!("\n**** No values set ****");
-                }
-                self.print_grid();
-            }
-
             let mut any_partners_removed = false;
             loop {
                 match self.run_partner_checks() {
                     Err(out_msg) => return Err(out_msg),
                     Ok(partners_removed) => if partners_removed { any_partners_removed = true; } else { break; },
                 }
-            }
-
-            if self.debug_output {
-                println!("\n**** After partner checking ****");
-                self.print_grid();
             }
 
             if !any_values_removed && !any_new_sets && !any_partners_removed
@@ -473,9 +445,6 @@ impl Grid {
     // If so, remove that potential value from the cell and run all the checks again.)
     fn run_try_checks (&mut self) -> bool {
         let mut result = false;
-        if self.debug_output {
-            println!("Looking for bad values");
-        }
         // Find unsolved cells
         for row in 0..GRID_SIZE {
             for column in 0..GRID_SIZE {
@@ -492,10 +461,6 @@ impl Grid {
                         }
                     }
 
-                    if self.debug_output {
-                        println!("Found a potential bad value {value} in row {row}, column {column}");
-                    }
-
                     let trial_remove_result = trial_grid.grid[row][column].remove_value(value);
                     if trial_remove_result.is_ok() {
                         let trial_after_remove_result = trial_grid.run_all_checks();
@@ -509,13 +474,6 @@ impl Grid {
                 if result { break }; // Need to restart the whole process since the grid has changed
             }
             if result { break }; // Need to restart the whole process since the grid has changed
-        }
-        if self.debug_output {
-            if result {
-                println!("Removed a bad value.");
-            } else {
-                println!("Did not find bad values");
-            }
         }
         result
     }
@@ -556,7 +514,6 @@ impl Grid {
             self.solution_search(self.clone(), &mut solutions, 2);
             assert!(solutions.len() > 0, "No solutions found after running extra checks!");
             if solutions.len() == 1 {
-                println!("Unique solution found in final check!");
                 self.replace(&solutions[0].grid);
             }
         }
