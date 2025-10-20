@@ -82,6 +82,10 @@ window.addEventListener("DOMContentLoaded", () => {
     gameMessageElement = document.querySelector("#game-message");
     const clearButton = document.querySelector("#clear-button");
     const searchButton = document.querySelector("#search-button");
+
+    selectedCell = document.querySelector(`.cell[data-index="0"]`);
+    selectedCell.classList.add('selected');
+
     clearButton.addEventListener("click", () => {
         user_input(clear_input);
     });
@@ -121,7 +125,7 @@ window.addEventListener("DOMContentLoaded", () => {
                     nextIndex = (dataIndex + 9) % 81;
                 } else if (e.key === 'ArrowUp') {
                     nextIndex = (dataIndex - 9 + 81) % 81;
-                }
+             }
                 const nextCell = document.querySelector(`.cell[data-index="${nextIndex}"]`);
                 if (nextCell) {
                     selectedCell.classList.remove('selected');
