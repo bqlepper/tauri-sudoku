@@ -150,6 +150,10 @@ button {
     color: green;
 }
 
+.message-ok {
+    color: blue;
+}
+
 .message-bad {
     color: red;
 }

@@ -8,6 +8,25 @@ const solve_input = '11';
 const debug_on = '12';
 const debug_off = '13';
 
+function set_message_ok(message) {
+    gameMessageElement.textContent = message;
+    gameMessageElement.classList.add("message-ok");
+    gameMessageElement.classList.remove("message-good");
+    gameMessageElement.classList.remove("message-bad");
+}
+function set_message_bad(message) {
+    gameMessageElement.textContent = message;
+    gameMessageElement.classList.remove("message-good");
+    gameMessageElement.classList.remove("message-ok");
+    gameMessageElement.classList.add("message-bad");
+}
+function set_message_good(message) {
+    gameMessageElement.textContent = message;
+    gameMessageElement.classList.add("message-good");
+    gameMessageElement.classList.remove("message-bad");
+    gameMessageElement.classList.remove("message-ok");
+}
+
 async function user_input(keyPress) {
     // Learn more about Tauri commands at https://v1.tauri.app/v1/guides/features/command
     let grid_string =
@@ -18,9 +37,7 @@ async function user_input(keyPress) {
     if ((grid_string.charAt(0) !== '-') &&
         (grid_string.charAt(0) !== 'u') &&
         (grid_string.charAt(0) !== 's')) {
-        gameMessageElement.textContent = grid_string;
-        gameMessageElement.classList.remove("message-good");
-        gameMessageElement.classList.add("message-bad");
+        set_message_bad(grid_string);
         return;
     }
 
@@ -53,17 +70,11 @@ async function user_input(keyPress) {
         }
     }
     if (error_found === true) {
-        gameMessageElement.textContent = "Oops!  Something is wrong";
-        gameMessageElement.classList.remove("message-good");
-        gameMessageElement.classList.add("message-bad");
+        set_message_bad("Oops!  Something is wrong");
     } else if (solved === true) {
-        gameMessageElement.textContent = "Congratulations!  Puzzle Solved!";
-        gameMessageElement.classList.add("message-good");
-        gameMessageElement.classList.remove("message-bad");
+        set_message_good("Congratulations!  Puzzle Solved!");
     } else {
-        gameMessageElement.textContent = "";
-        gameMessageElement.classList.remove("message-good");
-        gameMessageElement.classList.remove("message-bad");
+        set_message_ok("Use arrows or click to select cells and type 1 - 9 to set values.");
     }
 }
 
@@ -75,9 +86,7 @@ window.addEventListener("DOMContentLoaded", () => {
         user_input(clear_input);
     });
     searchButton.addEventListener("click", () => {
-        gameMessageElement.textContent = "Searching for a solution.  Hang on...";
-        gameMessageElement.classList.add("message-good");
-        gameMessageElement.classList.remove("message-bad");
+        set_message_ok("Searching for a solution.  Hang on...");
         user_input(solve_input);
     });
 
@@ -97,20 +106,7 @@ window.addEventListener("DOMContentLoaded", () => {
         const dataIndex = parseInt(selectedCell.getAttribute('data-index'));
         if (selectedCell) {
             if (e.key >= '0' && e.key <= '9') {
-                gameMessageElement.textContent = "Processing Input.  Hang on...";
-                gameMessageElement.classList.add("message-good");
-                gameMessageElement.classList.remove("message-bad");
-                user_input(e.key);
-            } else if (e.key === 'Backspace' || e.key === 'Delete') {
-                user_input('0');
-            } else if (e.key === 'C' || e.key === 'c') {
-                user_input(clear_input);
-            } else if (e.key === 'S' || e.key === 's') {
-                user_input(solve_input);
-            } else if (e.key === 'D' || e.key === 'd') {
-                user_input(debug_on);
-            } else if (e.key === 'O' || e.key === 'o') {
-                user_input(debug_off);
+                set_message_ok("Processing your input.  Hang on...");
             } else if ((e.key === 'Tab') ||
                        (e.key === 'ArrowRight') ||
                        (e.key === 'ArrowLeft') ||
@@ -132,6 +128,25 @@ window.addEventListener("DOMContentLoaded", () => {
                     selectedCell = nextCell;
                     selectedCell.classList.add('selected');
                 }
+            }
+        }
+    });
+
+    // Add keyboard event listener to set values in the selected cell
+    document.addEventListener('keyup', (e) => {
+        if (selectedCell) {
+            if (e.key >= '0' && e.key <= '9') {
+                user_input(e.key);
+            } else if (e.key === 'Backspace' || e.key === 'Delete') {
+                user_input('0');
+            } else if (e.key === 'C' || e.key === 'c') {
+                user_input(clear_input);
+            } else if (e.key === 'S' || e.key === 's') {
+                user_input(solve_input);
+            } else if (e.key === 'D' || e.key === 'd') {
+                user_input(debug_on);
+            } else if (e.key === 'O' || e.key === 'o') {
+                user_input(debug_off);
             }
         }
     });
