@@ -3,7 +3,7 @@ use sudoku_cell::Cell;
 
 pub mod sudoku_cell;
 
-pub(super) const GRID_SIZE: usize = 9;
+const GRID_SIZE: usize = 9;
 const START_EXTRA_CHECKS: usize = 16;
 
 // Calculates the dimensions of the 3x3 box that contains the input row and column
@@ -83,7 +83,7 @@ impl Grid {
     }
 
     // returns true if every cell is valid, false otherwise.
-    pub(super) fn is_valid(&self) -> bool {
+    fn is_valid(&self) -> bool {
         self.grid.iter().flat_map(|row| row.iter()).all(|cell| {
             cell.is_valid()
         })
@@ -598,6 +598,16 @@ impl Grid {
 
     // Returns false if this value was already set, otherwise returns true to indicate a change
     pub(super) fn set_value(&mut self, row: usize, column: usize, value: u8) -> Result<bool, String> {
+        if row >= GRID_SIZE {
+            return Err(format!("Invalid row {}", row+1));
+        }
+        if column >= GRID_SIZE {
+            return Err(format!("Invalid column {}", column+1));
+        }
+        if value == 0 || value > 9 {
+            return Err(format!("Invalid value {value}"));
+        }
+
         match self.grid[row][column].set_value(value) {
             Err(()) => return Err(format!("{value} is not a valid entry for row {} column {}", row+1, column+1)),
             Ok(changed) => return Ok(changed),

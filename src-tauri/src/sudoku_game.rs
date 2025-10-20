@@ -41,16 +41,6 @@ impl Game {
     // row and column passed into this function are in the 0-8 range.  For debug output rows and columns are also in the 0-8 range.
     // However, for user entry and for displaying the rows and columns in the error messages, they are in the 1-9 range.
     pub(super) fn user_set_value(&mut self, row: usize, column: usize, value: u8) -> Result<(), String> {
-        if row >= sudoku_grid::GRID_SIZE {
-            return Err(format!("Invalid row {}", row+1));
-        }
-        if column >= sudoku_grid::GRID_SIZE {
-            return Err(format!("Invalid column {}", column+1));
-        }
-        if value == 0 || value > 9 {
-            return Err(format!("Invalid value {value}"));
-        }
-
         // Create a trial grid to try out this setting
         let mut trial_grid = self.grid.clone();
 
