@@ -1,7 +1,5 @@
 use super::Grid;
 
-const START_EXTRA_CHECKS: usize = 16;
-
 impl Grid {
     // Try all remaining potential values and detect if they lead to an error situation (cell with no potential values)
     // If so, remove that potential value from the cell and run all the checks again.)
@@ -40,25 +38,30 @@ impl Grid {
         result
     }
 
-    fn get_solved_count(&self) -> usize {
+    // Return true only if the user has entered enough clues
+    // These extra checks are time consuming trial-and-error checks, so theh should not be used until
+    // the user has put in enough clues to perhaps make the puzzle solvable.
+    // 17 is supposedly the minimum number of clues for a valid Sudoku puzzle with one solution.
+    fn should_start_extra_checks(&self) -> bool {
+        const START_EXTRA_CHECKS: usize = 16;
         let mut solved_count = 0;
         for row in 0..super::GRID_SIZE {
             for column in 0..super::GRID_SIZE {
                 if self.grid[row][column].is_solved() {
                     solved_count += 1;
                 }
+                if solved_count >= START_EXTRA_CHECKS {
+                    return true;
+                }
             }
         }
-        solved_count
+        return false;
     }
 
     pub(crate) fn run_extra_checks(&mut self) {
 
-        if self.get_solved_count() >= START_EXTRA_CHECKS {
+        if self.should_start_extra_checks() {
             loop {
-                // These try-and-check tests shouldn't be started until there are many potential values removed
-                // 17 is supposedly the minimum number of clues for a valid Sudoku puzzle, so that is probably where
-                // I should start, but I thought I would try a little smaller number.
                 if !self.run_try_checks() {
                     break;
                 }
@@ -67,11 +70,11 @@ impl Grid {
         }
     }
 
-    // Searches recursively for solutions.  If only 1 is found, the puzzle is solved.
-    // Stops immedieately if more than 1 solution is found.
+    // Uses recursive solution search below to search for solutions.  If only 1 is found, the puzzle is solved.
+    // The search stops immedieately if more than 1 solution is found.
     pub(crate) fn run_final_check(&mut self) {
 
-        if !self.is_solved() && self.get_solved_count() >= START_EXTRA_CHECKS {
+        if !self.is_solved() && self.should_start_extra_checks() {
             let mut solutions: Vec<Grid> = Vec::new();
             self.solution_search(self.clone(), &mut solutions, 2);
             assert!(solutions.len() > 0, "No solutions found after running extra checks!");
@@ -81,8 +84,11 @@ impl Grid {
         }
     }
 
+    // Uses recursive solution search below to search for solutions.
+    // The search stops immedieately and returns true if any solution is found.
+    // Returns false if no solutions are found.
     pub(crate) fn is_solvable (&self) -> bool {
-        if self.is_solved() || self.get_solved_count() < START_EXTRA_CHECKS {
+        if !self.should_start_extra_checks() || self.is_solved() {
             return true;
         }
         let mut solutions: Vec<Grid> = Vec::new();
@@ -90,7 +96,11 @@ impl Grid {
         solutions.len() > 0
     }
 
+    // Uses recursive solution search below to search for solutions.
+    // The search stops immedieately if the maximum number of solutions is found.
+    // Returns OK and number of solutions found, or Err(0) if none are found.
     pub(crate) fn count_solutions (&self) -> Result<usize, usize> {
+        const MAX_SOLUTIONS: usize = 5;
         if self.is_solved() {
             println!("Already solved!!!!");
             self.print_grid();
@@ -99,7 +109,7 @@ impl Grid {
         let mut solutions: Vec<Grid> = Vec::new();
         self.solution_search(self.clone(), &mut solutions, 5);
         println!("Found {} solutions", solutions.len());
-        if solutions.len() >= 5 {
+        if solutions.len() >= MAX_SOLUTIONS {
             return Err(5);
         } else if solutions.len() == 0 {
             return Err(0);
