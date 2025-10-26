@@ -1,6 +1,11 @@
+# Purpose
+
+This is a simple soduko solution solver written with a rust backend and a simple
+html, css, javascrupt UI based out Tauri.  I am playing around with it to learn Rust and to practice using the VSCode copilot AI agent.
+
 # TODOs
 
-- sudoku_grid.rs has way too many functions, need to break it up.
+- Replace simple html, css, javascript ui with React or something fancy
 - Why do cells get bigger when a number is put in.  Stay rigid size, cells
 
 # Getting started
