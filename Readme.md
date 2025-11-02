@@ -1,7 +1,7 @@
 # Purpose
 
 This is a simple soduko solution solver written with a rust backend and a simple
-html, css, javascrupt UI based out Tauri.  I am playing around with it to learn Rust and to practice using the VSCode copilot AI agent.
+html, css, javascrupt UI based on [Tauri](https://v1.tauri.app/).  I am playing around with it to learn Rust and to practice using the VSCode copilot AI agent.
 
 # TODOs
 
@@ -27,7 +27,7 @@ To build and run a Tauri app in Development Mode: cargo tauri dev
 
 cargo tauri dev -- -- --cli
 
-Note: The double -- might seem weird.  The first one tells the Tauri build program to pass on the command line option to the cargo build program, and the second one tells the carge build program to pass on the command line option to our own Rust main routine.
+Note: The double -- might seem weird.  The first one tells the Tauri build program to pass on the command line option to the cargo build program, and the second one tells the cargo build program to pass on the command line option to our own Rust main routine.
 
 ## Key Features of Command Line Only
 
