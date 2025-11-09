@@ -3,7 +3,7 @@ use super::Grid;
 impl Grid {
     // Try all remaining potential values and detect if they lead to an error situation (cell with no potential values)
     // If so, remove that potential value from the cell and run all the checks again.)
-    fn run_try_checks (&mut self) -> bool {
+    fn run_try_checks(&mut self) -> bool {
         let mut result = false;
         // Find unsolved cells
         for row in 0..super::GRID_SIZE {
@@ -26,14 +26,18 @@ impl Grid {
                         let trial_after_remove_result = trial_grid.run_all_checks();
                         if trial_after_remove_result.is_ok() {
                             self.replace(&trial_grid.grid);
-                            result =   true;
+                            result = true;
                             break; // Need to restart the whole process since the grid has changed
                         }
                     }
                 }
-                if result { break }; // Need to restart the whole process since the grid has changed
+                if result {
+                    break;
+                }; // Need to restart the whole process since the grid has changed
             }
-            if result { break }; // Need to restart the whole process since the grid has changed
+            if result {
+                break;
+            }; // Need to restart the whole process since the grid has changed
         }
         result
     }
@@ -59,7 +63,6 @@ impl Grid {
     }
 
     pub(crate) fn run_extra_checks(&mut self) {
-
         if self.should_start_extra_checks() {
             loop {
                 if !self.run_try_checks() {
@@ -73,11 +76,13 @@ impl Grid {
     // Uses recursive solution search below to search for solutions.  If only 1 is found, the puzzle is solved.
     // The search stops immedieately if more than 1 solution is found.
     pub(crate) fn run_final_check(&mut self) {
-
         if !self.is_solved() && self.should_start_extra_checks() {
             let mut solutions: Vec<Grid> = Vec::new();
             self.solution_search(self.clone(), &mut solutions, 2);
-            assert!(solutions.len() > 0, "No solutions found after running extra checks!");
+            assert!(
+                solutions.len() > 0,
+                "No solutions found after running extra checks!"
+            );
             if solutions.len() == 1 {
                 self.replace(&solutions[0].grid);
             }
@@ -87,7 +92,7 @@ impl Grid {
     // Uses recursive solution search below to search for solutions.
     // The search stops immedieately and returns true if any solution is found.
     // Returns false if no solutions are found.
-    pub(crate) fn is_solvable (&self) -> bool {
+    pub(crate) fn is_solvable(&self) -> bool {
         if !self.should_start_extra_checks() || self.is_solved() {
             return true;
         }
@@ -99,7 +104,7 @@ impl Grid {
     // Uses recursive solution search below to search for solutions.
     // The search stops immedieately if the maximum number of solutions is found.
     // Returns OK and number of solutions found, or Err(0) if none are found.
-    pub(crate) fn count_solutions (&self) -> Result<usize, usize> {
+    pub(crate) fn count_solutions(&self) -> Result<usize, usize> {
         const MAX_SOLUTIONS: usize = 5;
         if self.is_solved() {
             println!("Already solved!!!!");
@@ -118,14 +123,19 @@ impl Grid {
     }
 
     // Recursive method to try all remaining potential values and count the number of solutions that are still valid
-    fn solution_search (&self,
-                        in_grid: Grid,
-                        solutions: &mut Vec<Grid>,
-                        max_solutions: usize) {
-
-        assert!(self.is_valid(), "Called solution_search with invalid puzzle!");
-        assert!(!self.is_solved(), "Called solution_search with solvedd puzzle!");
-        assert!(solutions.len() < max_solutions, "Called solution_search with already enough solutions!");
+    fn solution_search(&self, in_grid: Grid, solutions: &mut Vec<Grid>, max_solutions: usize) {
+        assert!(
+            self.is_valid(),
+            "Called solution_search with invalid puzzle!"
+        );
+        assert!(
+            !self.is_solved(),
+            "Called solution_search with solvedd puzzle!"
+        );
+        assert!(
+            solutions.len() < max_solutions,
+            "Called solution_search with already enough solutions!"
+        );
 
         // Find first non-solved cell
         let mut row: usize = 0;
@@ -145,22 +155,31 @@ impl Grid {
         for value in in_grid.grid[row][column].get_value_list() {
             let mut next_grid = in_grid.clone();
             match next_grid.set_value(row, column, value) {
-                Err(_) => { continue; },
+                Err(_) => {
+                    continue;
+                }
                 Ok(changed) => {
-                    assert!(changed, "Value {} in row {}, column {} was already set!", value, row, column);
+                    assert!(
+                        changed,
+                        "Value {} in row {}, column {} was already set!",
+                        value, row, column
+                    );
                     match next_grid.run_all_checks() {
-                        Err(_) => { continue;},
+                        Err(_) => {
+                            continue;
+                        }
                         Ok(_) => {
                             next_grid.run_extra_checks();
-                            if next_grid.is_solved() { // If we've found a possible solution
+                            if next_grid.is_solved() {
+                                // If we've found a possible solution
                                 solutions.push(next_grid.clone());
                                 return;
                             } else {
                                 self.solution_search(next_grid, solutions, max_solutions);
                             }
-                        },
+                        }
                     }
-                },
+                }
             }
             if solutions.len() >= max_solutions {
                 return;
@@ -168,4 +187,3 @@ impl Grid {
         }
     }
 }
-
