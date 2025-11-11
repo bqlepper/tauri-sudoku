@@ -20,12 +20,6 @@ struct GameState(Mutex<Game>);
 // Column: 9 vertical cells.  There are 9 of these in a sudoku puzzle.
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
-
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command(rename_all = "snake_case")]
 fn user_change(state: State<'_, GameState>, cell_index: usize, user_input: u8) -> String {
     // Lock the mutex to get mutable access to the Game
@@ -74,7 +68,6 @@ fn user_change(state: State<'_, GameState>, cell_index: usize, user_input: u8) -
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet])
         .manage(GameState(Mutex::new(Game::new()))) // Wrap Game in a Mutex
         .invoke_handler(tauri::generate_handler![user_change])
         .run(tauri::generate_context!())

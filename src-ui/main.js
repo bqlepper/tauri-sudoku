@@ -1,7 +1,5 @@
 const { invoke } = window.__TAURI__.core;
 
-let greetInputEl;
-let greetMsgEl;
 let gameMessageElement;
 let selectedCell = null;
 
@@ -27,11 +25,6 @@ function set_message_good(message) {
     gameMessageElement.classList.add("message-good");
     gameMessageElement.classList.remove("message-bad");
     gameMessageElement.classList.remove("message-ok");
-}
-
-async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    greetMsgEl.textContent = await invoke("greet", { name: greetInputEl.value });
 }
 
 async function user_input(keyPress) {
@@ -86,13 +79,6 @@ async function user_input(keyPress) {
 }
 
 window.addEventListener("DOMContentLoaded", () => {
-    greetInputEl = document.querySelector("#greet-input");
-    greetMsgEl = document.querySelector("#greet-msg");
-    document.querySelector("#greet-form").addEventListener("submit", (e) => {
-        e.preventDefault();
-        greet();
-    });
-
     gameMessageElement = document.querySelector("#game-message");
     const clearButton = document.querySelector("#clear-button");
     const searchButton = document.querySelector("#search-button");
