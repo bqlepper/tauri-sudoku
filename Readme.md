@@ -1,7 +1,7 @@
 # Purpose
 
 This is a simple soduko solution solver written with a rust backend and a simple
-html, css, javascrupt UI based on [Tauri](https://v1.tauri.app/).  I am playing around with it to learn Rust and to practice using the VSCode copilot AI agent.
+html, css, javascrupt UI based on [Tauri](https://v2.tauri.app/).  I am playing around with it to learn Rust and to practice using the VSCode copilot AI agent.
 
 # TODOs
 
@@ -10,7 +10,7 @@ html, css, javascrupt UI based on [Tauri](https://v1.tauri.app/).  I am playing 
 
 # Getting started
 
-[Link to Tauri getting started page](https://v1.tauri.app/v1/guides/getting-started/setup/)
+[Link to Tauri getting started page](https://v2.tauri.app/start/)
 
 # To Build and Run in Development Mode
 
@@ -51,4 +51,4 @@ This app was built using the Tauri + Vanilla template to allow for simple develo
 
 ## Recommended IDE Setup
 
-[VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)

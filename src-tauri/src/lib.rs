@@ -1,6 +1,3 @@
-// Prevents additional console window on Windows in release, DO NOT REMOVE!!
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-
 use std::env;
 use std::sync::Mutex;
 use tauri::State;
@@ -22,7 +19,13 @@ struct GameState(Mutex<Game>);
 // Row: 9 horizontal cells.  There are 9 of these in a sudoku puzzle.
 // Column: 9 vertical cells.  There are 9 of these in a sudoku puzzle.
 
-// Learn more about Tauri commands at https://v1.tauri.app/v1/guides/features/command
+// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
+#[tauri::command]
+fn greet(name: &str) -> String {
+    format!("Hello, {}! You've been greeted from Rust!", name)
+}
+
+// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command(rename_all = "snake_case")]
 fn user_change(state: State<'_, GameState>, cell_index: usize, user_input: u8) -> String {
     // Lock the mutex to get mutable access to the Game
@@ -38,7 +41,7 @@ fn user_change(state: State<'_, GameState>, cell_index: usize, user_input: u8) -
         match game.count_solutions() {
             Ok(count) => {
                 return format!("Solutions remaining: {}", count);
-            }
+            },
             Err(count) => {
                 if count == 0 {
                     return "No solutions remaining".to_string();
@@ -56,7 +59,7 @@ fn user_change(state: State<'_, GameState>, cell_index: usize, user_input: u8) -
         match game.user_set_value(cell_index / 9, cell_index % 9, user_input) {
             Ok(_) => {
                 game.print_grid();
-            }
+            },
             Err(user_msg) => {
                 println!("Bad input: {user_msg}");
                 return format!("Bad input: {user_msg}");
@@ -67,149 +70,13 @@ fn user_change(state: State<'_, GameState>, cell_index: usize, user_input: u8) -
     game.get_grid()
 }
 
-fn go_command_line() {
-    let mut game: Game = Game::new();
-    // This loop allows users to enter given puzzle values from the command line
-    loop {
-        println!("\nEnter row, column, and value separated by spaces (h for help):");
-
-        // Read a line from standard input
-        let mut input_line = String::new();
-        match std::io::stdin().read_line(&mut input_line) {
-            Ok(_) => {
-                let input_numbers: Vec<&str> = input_line.trim().split_whitespace().collect();
-
-                if input_numbers.len() == 1 {
-                    match input_numbers[0].to_lowercase().as_str() {
-                        "q" | "quit" => {
-                            println!("Goodbye.");
-                            break;
-                        }
-                        "d" | "debug" => {
-                            game.set_debug(true);
-                            game.print_grid();
-                            continue;
-                        }
-                        "o" | "off" => {
-                            game.set_debug(false);
-                            game.print_grid();
-                            continue;
-                        }
-                        "c" | "clear" => {
-                            game.clear();
-                            game.print_grid();
-                            continue;
-                        }
-                        "h" | "help" => {
-                            println!("\nDuring play the following keypresses are allowed:");
-                            println!("\n  1-9              Enter sudoku puzzle clues");
-                            println!(
-                                "  del or backspace   Clear a puzzle clue that was already entered"
-                            );
-                            println!("  c (clear)          Clear the entire puzzle");
-                            println!("  s (search)         Runs brute force solution search (can take a long time if too few clues provided)");
-                            println!(
-                                "  q (quit)           Exit the program (for command line only)"
-                            );
-                            println!(
-                                "  d (debug)          Turn on debugging output on the command line"
-                            );
-                            println!("  o (off)            Turn off debugging output on the command line\n");
-                            println!("For command line enter row column and value on one line separated by spaces with values 1-9 for all.\n");
-                            println!("For GUI the mouse, arrow keys, and tab can be used to navigate the grid and use red window X to close.\n");
-                            continue;
-                        }
-                        "s" | "search" => {
-                            match game.count_solutions() {
-                                Ok(count) => {
-                                    println!("Solutions remaining: {}", count);
-                                }
-                                Err(count) => {
-                                    if count == 0 {
-                                        println!("No solutions remaining");
-                                    } else {
-                                        println!("At least {} solutions remaining", count);
-                                    }
-                                }
-                            }
-                            continue;
-                        }
-                        _ => {
-                            println!("Bad input, try again (or type 'help'): {}", input_line);
-                            continue;
-                        }
-                    }
-                }
-
-                if input_numbers.len() < 3 {
-                    println!(
-                        "Bad input, try again (too few input vaules): {}",
-                        input_line
-                    );
-                    continue;
-                } else if input_numbers.len() > 3 {
-                    println!("Warning: Ignoring extra input values");
-                }
-
-                let row = match input_numbers[0].parse::<usize>() {
-                    Ok(row_num) => row_num,
-                    Err(_) => 0,
-                };
-
-                let column = match input_numbers[1].parse::<usize>() {
-                    Ok(column_num) => column_num,
-                    Err(_) => 0,
-                };
-
-                if row < 1 || column < 1 {
-                    println!("Row & column must be greater than zero");
-                    continue;
-                }
-
-                let value = match input_numbers[2].parse::<u8>() {
-                    Ok(value_num) => value_num,
-                    Err(_) => 0,
-                };
-
-                match game.user_set_value(row - 1, column - 1, value) {
-                    Ok(_) => {
-                        game.print_grid();
-                    }
-                    Err(user_msg) => {
-                        println!("Bad input: {user_msg}");
-                        continue;
-                    }
-                }
-            }
-            Err(_) => {
-                println!("Bad input (error reading line): {}", input_line);
-                break;
-            }
-        }
-    }
-}
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let args: Vec<String> = env::args().collect();
-
-    match env::current_dir() {
-        Ok(pb) => println!("The current directory is {}", pb.display()),
-        Err(_) => println!("Error getting current working directory!"),
-    }
-
-    if args.contains(&"--cli".to_string()) {
-        // This code implements a command line version of the UI that is good for debugging
-        // It allows the users to interactively enter given puzzle values with command line
-        // But also offers a debug view of all the values to see what potential values are remaining
-        go_command_line();
-    } else {
-        tauri::Builder::default()
-            .plugin(tauri_plugin_shell::init())
-            .manage(GameState(Mutex::new(Game::new()))) // Wrap Game in a Mutex
-            .invoke_handler(tauri::generate_handler![user_change])
-            .run(tauri::generate_context!())
-            .expect("error while running tauri application");
-        println!("Tauri app exited");
-    }
+    tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
+        .invoke_handler(tauri::generate_handler![greet])
+        .manage(GameState(Mutex::new(Game::new()))) // Wrap Game in a Mutex
+        .invoke_handler(tauri::generate_handler![user_change])
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
 }

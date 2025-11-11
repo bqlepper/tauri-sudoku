@@ -8,6 +8,7 @@ impl Grid {
         for row in 0..super::GRID_SIZE {
             for column in 0..super::GRID_SIZE {
                 if self.grid[row][column].is_solved() {
+
                     let value = match self.grid[row][column].get_value() {
                         Err(_) => 0,
                         Ok(v) => v,
@@ -16,11 +17,7 @@ impl Grid {
                     for column2 in 0..super::GRID_SIZE {
                         if column != column2 {
                             match self.grid[row][column2].remove_value(value) {
-                                Err(()) => {
-                                    return Err(format!(
-                                        "Cannot remove {value} from row {row} column {column2}!"
-                                    ))
-                                }
+                                Err(()) => return Err(format!("Cannot remove {value} from row {row} column {column2}!")),
                                 Ok(something_changed) => result |= something_changed,
                             }
                         }
@@ -29,11 +26,7 @@ impl Grid {
                     for row2 in 0..super::GRID_SIZE {
                         if row != row2 {
                             match self.grid[row2][column].remove_value(value) {
-                                Err(()) => {
-                                    return Err(format!(
-                                        "Cannot remove {value} from row {row2} column {column}!"
-                                    ))
-                                }
+                                Err(()) => return Err(format!("Cannot remove {value} from row {row2} column {column}!")),
                                 Ok(something_changed) => result |= something_changed,
                             }
                         }
@@ -44,9 +37,7 @@ impl Grid {
                         for column3 in bx.2..bx.3 {
                             if row != row3 || column != column3 {
                                 match self.grid[row3][column3].remove_value(value) {
-                                    Err(()) => return Err(format!(
-                                        "Cannot remove {value} from row {row3} column {column3}!"
-                                    )),
+                                    Err(()) => return Err(format!("Cannot remove {value} from row {row3} column {column3}!")),
                                     Ok(something_changed) => result |= something_changed,
                                 }
                             }
@@ -86,9 +77,7 @@ impl Grid {
                 }
                 if value_count == 1 {
                     match self.grid[value_row][value_column].set_value(value as u8) {
-                        Err(()) => return Err(format!(
-                            "Unexpected row error: row {value_row} col {value_column} val {value}!"
-                        )),
+                        Err(()) => return Err(format!("Unexpected row error: row {value_row} col {value_column} val {value}!")),
                         Ok(something_changed) => result |= something_changed,
                     }
                 }
@@ -108,9 +97,7 @@ impl Grid {
                     }
                 }
                 if value_count < 1 {
-                    return Err(format!(
-                        "Unexpected error column {column2} has no value {value}!"
-                    ));
+                    return Err(format!("Unexpected error column {column2} has no value {value}!"));
                 }
                 if value_count == 1 {
                     match self.grid[value_row][value_column].set_value(value as u8) {
@@ -154,21 +141,12 @@ impl Grid {
         Ok(result)
     }
 
-    fn remove_partners(
-        &mut self,
-        p_values: u16,
-        non_partners: &Vec<(usize, usize)>,
-    ) -> Result<bool, String> {
+    fn remove_partners(&mut self, p_values: u16, non_partners: &Vec<(usize, usize)>) -> Result<bool, String> {
         let mut result = false;
         for np in non_partners {
             match self.grid[np.0][np.1].remove_values(p_values) {
                 Ok(something_changed) => result |= something_changed,
-                Err(()) => {
-                    return Err(format!(
-                        "Removing partners from row {}, column {}, values {}!",
-                        np.0, np.1, p_values
-                    ))
-                }
+                Err(()) => return Err(format!("Removing partners from row {}, column {}, values {}!", np.0, np.1, p_values)),
             }
         }
 
@@ -187,10 +165,7 @@ impl Grid {
         for row in 0..super::GRID_SIZE {
             for column in 0..super::GRID_SIZE {
                 let p_count = self.grid[row][column].potential_value_count();
-                assert!(
-                    p_count <= super::GRID_SIZE,
-                    "Cell at row {row}, column {column} has {p_count} potential values!"
-                );
+                assert!(p_count <= super::GRID_SIZE, "Cell at row {row}, column {column} has {p_count} potential values!");
                 if self.grid[row][column].is_solved() || p_count == super::GRID_SIZE {
                     continue;
                 }
@@ -209,20 +184,14 @@ impl Grid {
 
                 // Shouldn't be able to have more partners than potential values
                 if partners.len() >= p_count {
-                    return Err(format!(
-                        "Too many partners found in row for row {row}, column, {column}"
-                    ));
+                    return Err(format!("Too many partners found in row for row {row}, column, {column}"));
                 }
 
                 // If enough partners were found, remove those values from other cells in this row
-                if partners.len() == p_count - 1 {
+                if partners.len() == p_count-1 {
                     match self.remove_partners(self.grid[row][column].get_values(), &non_partners) {
                         Ok(something_changed) => result |= something_changed,
-                        Err(error_out) => {
-                            return Err(format!(
-                                "Error partner rows: row {row}, column, {column}: {error_out}"
-                            ))
-                        }
+                        Err(error_out) => return Err(format!("Error partner rows: row {row}, column, {column}: {error_out}")),
                     };
                 }
 
@@ -243,20 +212,14 @@ impl Grid {
 
                 // Shouldn't be able to have more partners than potential values
                 if partners.len() >= p_count {
-                    return Err(format!(
-                        "Too many partners found in column for row {row}, column, {column}"
-                    ));
+                    return Err(format!("Too many partners found in column for row {row}, column, {column}"));
                 }
 
                 // If enough partners were found, remove those values from the other cells in this column
-                if partners.len() == p_count - 1 {
+                if partners.len() == p_count-1 {
                     match self.remove_partners(self.grid[row][column].get_values(), &non_partners) {
                         Ok(something_changed) => result |= something_changed,
-                        Err(error_out) => {
-                            return Err(format!(
-                                "Error partner columns: row {row}, column, {column}: {error_out}"
-                            ))
-                        }
+                        Err(error_out) => return Err(format!("Error partner columns: row {row}, column, {column}: {error_out}")),
                     };
                 }
 
@@ -267,13 +230,10 @@ impl Grid {
                 let sq = super::get_box_dimensions(row, column);
                 for row3 in sq.0..sq.1 {
                     for column3 in sq.2..sq.3 {
-                        if (row == row3 && column == column3)
-                            || self.grid[row3][column3].is_solved()
-                        {
+                        if (row == row3 && column == column3) || self.grid[row3][column3].is_solved() {
                             continue;
                         }
-                        if self.grid[row3][column3].is_partner(self.grid[row][column].get_values())
-                        {
+                        if self.grid[row3][column3].is_partner(self.grid[row][column].get_values()) {
                             partners.push((row3, column3));
                         } else {
                             non_partners.push((row3, column3));
@@ -283,20 +243,14 @@ impl Grid {
 
                 // Shouldn't be able to have more partners than potential values
                 if partners.len() >= p_count {
-                    return Err(format!(
-                        "Too many partners found in box for row {row}, column, {column}"
-                    ));
+                    return Err(format!("Too many partners found in box for row {row}, column, {column}"));
                 }
 
                 // If enough partners were found, remove those values from the other cells in this box
-                if partners.len() == p_count - 1 {
+                if partners.len() == p_count-1 {
                     match self.remove_partners(self.grid[row][column].get_values(), &non_partners) {
                         Ok(something_changed) => result |= something_changed,
-                        Err(error_out) => {
-                            return Err(format!(
-                                "Error partner cells: row {row}, column, {column}: {error_out}"
-                            ))
-                        }
+                        Err(error_out) => return Err(format!("Error partner cells: row {row}, column, {column}: {error_out}")),
                     };
                 }
 
@@ -309,18 +263,13 @@ impl Grid {
     }
 
     pub(crate) fn run_all_checks(&mut self) -> Result<(), String> {
+
         loop {
             let mut any_values_removed = false;
             loop {
                 match self.remove_solved_values() {
                     Err(out_msg) => return Err(out_msg),
-                    Ok(something_removed) => {
-                        if something_removed {
-                            any_values_removed = true;
-                        } else {
-                            break;
-                        }
-                    }
+                    Ok(something_removed) => if something_removed { any_values_removed = true; } else { break; },
                 }
             }
 
@@ -328,13 +277,7 @@ impl Grid {
             loop {
                 match self.single_values() {
                     Err(out_msg) => return Err(out_msg),
-                    Ok(something_set) => {
-                        if something_set {
-                            any_new_sets = true;
-                        } else {
-                            break;
-                        }
-                    }
+                    Ok(something_set) => if something_set { any_new_sets = true; } else { break; },
                 }
             }
 
@@ -342,25 +285,15 @@ impl Grid {
             loop {
                 match self.run_partner_checks() {
                     Err(out_msg) => return Err(out_msg),
-                    Ok(partners_removed) => {
-                        if partners_removed {
-                            any_partners_removed = true;
-                        } else {
-                            break;
-                        }
-                    }
+                    Ok(partners_removed) => if partners_removed { any_partners_removed = true; } else { break; },
                 }
             }
 
-            if !any_values_removed && !any_new_sets && !any_partners_removed {
-                break;
-            }
+            if !any_values_removed && !any_new_sets && !any_partners_removed
+                { break; }
         }
 
-        assert!(
-            self.is_valid(),
-            "Left run_all_checks with OK status, but invalid grid!"
-        );
+        assert!(self.is_valid(), "Left run_all_checks with OK status, but invalid grid!");
         Ok(())
     }
 }
