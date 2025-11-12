@@ -6,8 +6,7 @@ html, css, javascrupt UI based on [Tauri](https://v2.tauri.app/).  I am playing 
 # TODOs
 
 - Replace simple html, css, javascript ui with React or something fancy
-- Merge tauri 2 stuff into master and update these Readme with what needs to be installed
--   and more about my exact development setup
+- Update the Readme with what needs to be installed and exact development setup
 - Total code cleanup, coding guidelines
 - Once the extra checks start running there is a pretty serious delay sometimes,so we should solve that
 -     Maybe a background thread but maybe just better user awareness that working is going on
