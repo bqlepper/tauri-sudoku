@@ -6,13 +6,12 @@ html, css, javascrupt UI based on [Tauri](https://v2.tauri.app/).  I am playing 
 # TODOs
 
 - Replace simple html, css, javascript ui with React or something fancy
-- mergeg tauri 2 stuff into master and update these Readme with what needs to be installed
+- Merge tauri 2 stuff into master and update these Readme with what needs to be installed
 -   and more about my exact development setup
 - Total code cleanup, coding guidelines
 - Once the extra checks start running there is a pretty serious delay sometimes,so we should solve that
 -     Maybe a background thread but maybe just better user awareness that working is going on
 - Try it out on Windows again since it should work cross-platform
-- Resize main screen so no scrolling is necessary
 - Why do cells get bigger when a number is put in.  Stay rigid size, cells
 
 # Getting started
