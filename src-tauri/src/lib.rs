@@ -7,17 +7,13 @@ use crate::sudoku_game::Game;
 pub mod sudoku_game;
 struct GameState(Mutex<Game>);
 
-// -- Design and Terminology Definitions --
-// This is the main rust program file.  It handles any command line options when starting the program.
-// It creates a Puzzle or a Puzzled based on user command line input.
-// Puzzle: Creates a sudoku Game and handles user interaction with a GUI for the sudoku Game.
-// Puzzled: Creates a sudoku Game and handles user interaction with command-line-only used for debug.
-// Game: Creates a Grid.  Keeps track of the user sudoku entries and has a recursive solution solver.
-// Grid: A 9x9 array of cells in a sudoku puzzle.
-// Cell: The smallest entity in a Sudoku puzzle that holds one value 1-9
-// Box: A 3x3 array of cells.  There are 9 of these in a sudoku puzzle.
-// Row: 9 horizontal cells.  There are 9 of these in a sudoku puzzle.
-// Column: 9 vertical cells.  There are 9 of these in a sudoku puzzle.
+// For this user_change function, the cell_index is in the 0-80 range and user_input is in the 0-12 range.
+//The user_input values must match up with values defined in src-ui/main.js:
+//  0-9: Set the cell to that value (0 is used to clear a cell)
+//  10: Clear the whole grid
+//  11: Count the number of solutions remaining for the current grid and return that count to the caller.  If there are more than 100 solutions remaining, return "At least 100 solutions remaining" instead of the actual count.
+//  12: Turn on debug mode which prints out the grid with all the possible values for each cell and the number of solutions remaining for each cell.
+//  13: Turn off debug mode and return to normal grid display.
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command(rename_all = "snake_case")]
