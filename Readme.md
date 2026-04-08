@@ -89,9 +89,7 @@ To build and run a Tauri app in Development Mode: cargo tauri dev
 
 ## Building and running in headless (command-line only) Development Mode
 
-TODO: This doesn't work yet and needs to be implemented for developing in remote ssh terminal and for automated testing
-
-cargo tauri dev -- -- --cli
+cargo tauri dev -- -- --headless
 
 Note: The double -- might seem weird.  The first one tells the Tauri build program to pass on the command line option to the cargo build program, and the second one tells the cargo build program to pass on the command line option to our own Rust main routine.
 
