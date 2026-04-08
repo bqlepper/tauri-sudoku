@@ -1,7 +1,7 @@
 # Purpose
 
-This is a simple soduko solution solver written with a rust backend and a simple
-html, css, javascrupt UI based on [Tauri](https://v2.tauri.app/).  I am playing around with it to learn Rust and to practice using the VSCode copilot AI agent.
+This is a simple sudoku solution solver written with a rust backend and a simple
+html, css, javascript UI based on [Tauri](https://v2.tauri.app/).  I am playing around with it to learn Rust and to practice using the VSCode copilot AI agent and Palantir Foundry.
 
 # TODOs
 
@@ -9,11 +9,22 @@ html, css, javascrupt UI based on [Tauri](https://v2.tauri.app/).  I am playing 
 - Update the Readme with what needs to be installed and exact development setup
 - Total code cleanup, coding guidelines
 - Once the extra checks start running there is a pretty serious delay sometimes,so we should solve that
--     Maybe a background thread but maybe just better user awareness that working is going on
+    - Maybe a background thread but maybe just better user awareness that working is going on
 - Try it out on Windows again since it should work cross-platform
 - Why do cells get bigger when a number is put in.  Stay rigid size, cells
 
 # Getting started
+
+## Getting the repo from GitHub
+
+Instead of using classic or fine-grain tokens, I chose to use [GitHub CLI](https://cli.github.com/) and use an SSH key.  So, first install GitHub CLI and do `gh auth login`.
+The title of the SSH key on my GitHub account is "BQL GitHub CLI" (/home/blepper/.ssh/id_ed25519.pub).  Passphrase stored in hint page on my Pixel 8.  Once installed and authenticated, do `gh repo list` and clone with `gh repo clone https://github.com/bqlepper/tauri-sudoku.git`
+
+## VSCode Plug-Ins
+
+When you open the folder with VSCode, you will probably be prompted to install the tauri and rust-analyzer VSCode plug-ins.  Those should be installed.
+
+## Tauri
 
 [Link to Tauri getting started page](https://v2.tauri.app/start/)
 
