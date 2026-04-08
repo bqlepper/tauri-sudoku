@@ -32,7 +32,7 @@
         {
             "label": "Build Command Line Only Debug",
             "type": "shell",
-            "command": "cargo tauri dev -- -- --cli",
+            "command": "cargo tauri dev -- -- --headless",
             "group": {
                 "kind": "build",
                 "isDefault": false

@@ -2,10 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 // This is the main rust program file.  It just launches the Tauri lib named in Cargo.toml and defined in lib.rs.
-
-// However, I would like to make this main function take a command line option so I can run it in a
-// debug mode that only uses command line user input and output for easy testing and debugging in a
-// headless environment.
+// If --headless is present on the command line, it is ran without a Tauri UI with only command line input/output.
 
 // -- Terminology Definitions --
 // Game: Creates a Grid.  Keeps track of the user sudoku entries and has a recursive solution solver.
@@ -16,5 +13,12 @@
 // Column: 9 vertical cells.  There are 9 of these in a sudoku puzzle.
 
 fn main() {
-    tauri2_sudoku_lib::run()
+    let args: Vec<String> = std::env::args().collect();
+    
+    // Check if --headless flag is present
+    if args.iter().any(|arg| arg == "--headless" || arg == "-h") {
+        tauri2_sudoku_lib::run_headless();
+    } else {
+        tauri2_sudoku_lib::run();
+    }
 }
