@@ -96,6 +96,12 @@ pub fn run_test(test_file_path: &Path) -> TestResult {
         };
     }
 
+    // Print test header and input
+    println!("\n=== Starting Test: {} ===", test_name);
+    println!("Input puzzle with {} clues:\n", entries.len());
+    println!("{}", content);
+    println!();
+
     // Create a new game
     let mut game = Game::new();
 
@@ -115,6 +121,9 @@ pub fn run_test(test_file_path: &Path) -> TestResult {
 
     // Check if the puzzle is solved
     if game.is_solved() {
+        // Print the solved puzzle
+        game.print_grid();
+
         TestResult {
             test_name,
             success: true,

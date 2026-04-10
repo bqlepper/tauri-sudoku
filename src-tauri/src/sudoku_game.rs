@@ -78,9 +78,9 @@ impl Game {
         Ok(())
     }
 
-    pub(super) fn print_grid(&self) {
+    pub fn print_grid(&self) {
         if self.grid.is_solved() {
-            println!("\n**** Solved Puzzle ****");
+            println!("\n**** Solved Puzzle (Green=Input, Yellow=Solved) ****");
         } else {
             println!("\n**** Current Puzzle ****");
         }
