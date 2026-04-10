@@ -2,7 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 // This is the main rust program file.  It just launches the Tauri lib named in Cargo.toml and defined in lib.rs.
-// If --headless is present on the command line, it is ran without a Tauri UI with only command line input/output.
+// If --headless is present on the command line, it is run without a Tauri UI with only command line input/output.
 
 // -- Terminology Definitions --
 // Game: Creates a Grid.  Keeps track of the user sudoku entries and has a recursive solution solver.
