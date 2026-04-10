@@ -2,12 +2,12 @@ use sudoku_grid::Grid;
 
 pub mod sudoku_grid;
 
-pub(super) struct Game {
+pub struct Game {
     grid: Grid, // The grid holds 9x9 grid of cells
 }
 
 impl Game {
-    pub(super) fn new() -> Game {
+    pub fn new() -> Game {
         Game {
             grid : Grid::new(),
         }
@@ -37,10 +37,15 @@ impl Game {
         self.grid.user_delete_value(row, column);
     }
 
+    // Check if the puzzle is solved
+    pub fn is_solved(&self) -> bool {
+        self.grid.is_solved()
+    }
+
     // Attempts to set a value in the grid from values input by the user
     // row and column passed into this function are in the 0-8 range.  For debug output rows and columns are also in the 0-8 range.
     // However, for user entry and for displaying the rows and columns in the error messages, they are in the 1-9 range.
-    pub(super) fn user_set_value(&mut self, row: usize, column: usize, value: u8) -> Result<(), String> {
+    pub fn user_set_value(&mut self, row: usize, column: usize, value: u8) -> Result<(), String> {
         // Create a trial grid to try out this setting
         let mut trial_grid = self.grid.clone();
 
@@ -73,9 +78,9 @@ impl Game {
         Ok(())
     }
 
-    pub(super) fn print_grid(&self) {
+    pub fn print_grid(&self) {
         if self.grid.is_solved() {
-            println!("\n**** Solved Puzzle ****");
+            println!("\n**** Solved Puzzle (Green=Input, Yellow=Solved) ****");
         } else {
             println!("\n**** Current Puzzle ****");
         }
