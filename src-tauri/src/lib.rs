@@ -6,6 +6,7 @@ use std::io::{self, Write};
 use crate::sudoku_game::Game;
 
 pub mod sudoku_game;
+pub mod test_harness;
 struct GameState(Mutex<Game>);
 
 // For this user_change function, the cell_index is in the 0-80 range and user_input is in the 0-12 range.
@@ -70,8 +71,57 @@ fn print_help() {
     println!("  count                  - Count remaining solutions");
     println!("  debug on               - Turn on debug mode");
     println!("  debug off              - Turn off debug mode");
+    println!("  test                   - Run all tests from test directory");
     println!("  h, help                - Show this help message");
     println!("  q, quit, exit          - Quit the program");
+}
+
+// Run the test harness
+fn run_tests() {
+    use std::path::Path;
+    
+    // Try to find the test directory
+    let test_paths = [
+        "../../test",           // From cargo run location
+        "../test",              // Alternative
+        "test",                 // If running from project root
+        "src-rust-sudoku/test", // From repo root
+    ];
+    
+    let test_dir = test_paths.iter()
+        .map(|p| Path::new(p))
+        .find(|p| p.exists())
+        .unwrap_or_else(|| {
+            println!("Warning: Could not find test directory. Trying '../../test'");
+            Path::new("../../test")
+        });
+    
+    println!("\n=== Running Test Suite ===");
+    println!("Test directory: {}\n", test_dir.display());
+    
+    let results = test_harness::run_all_tests(test_dir);
+    
+    let mut passed = 0;
+    let mut failed = 0;
+    
+    for result in &results {
+        if result.success {
+            println!("✓ {} - {}", result.test_name, result.message);
+            passed += 1;
+        } else {
+            println!("✗ {} - {}", result.test_name, result.message);
+            failed += 1;
+        }
+    }
+    
+    println!("\n=== Test Summary ===");
+    println!("Total: {}", passed + failed);
+    println!("Passed: {}", passed);
+    println!("Failed: {}", failed);
+    
+    if failed == 0 {
+        println!("\n🎉 All tests passed!");
+    }
 }
 
 // New headless mode function
@@ -204,6 +254,9 @@ pub fn run_headless() {
                         println!("Usage: debug on|off");
                     }
                 }
+            },
+            "test" => {
+                run_tests();
             },
             "h" | "help" => {
                 print_help();
