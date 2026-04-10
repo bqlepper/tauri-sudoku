@@ -14,7 +14,7 @@
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
-    
+
     // Check if --headless flag is present
     if args.iter().any(|arg| arg == "--headless" || arg == "-h") {
         tauri2_sudoku_lib::run_headless();
