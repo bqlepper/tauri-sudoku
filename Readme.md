@@ -1,14 +1,14 @@
 # Purpose
 
 This is a simple sudoku solution solver written with a rust backend and a simple
-html, css, javascript UI based on [Tauri](https://v2.tauri.app/).  I am playing around with it to learn Rust and to practice using the VSCode copilot AI agent and Palantir Foundry.
+html, css, javascript UI based on [Tauri](https://v2.tauri.app/). I am playing around with it to learn Rust and to practice using the VSCode copilot AI agent and Palantir Foundry.
 
 # TODOs
 
 - Replace simple html, css, javascript ui with React or something fancy
 - Total code cleanup, coding guidelines
 - Once the extra checks start running there is a pretty serious delay sometimes,so we should solve that
-    - Maybe a background thread but maybe just better user awareness that working is going on
+  - Maybe a background thread but maybe just better user awareness that working is going on
 - Try it out on Windows again since it should work cross-platform
 
 # Getting started
@@ -22,7 +22,7 @@ Use `rustup`, Rust's official installer which installs `rustc` the rust compiler
 - `sudo apt update`
 - `sudo apt install build-essential curl -y`
 - `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
-    - Follow prompts in terminal (just select defaults for everything)
+  - Follow prompts in terminal (just select defaults for everything)
 - Configure your cargo environment: `source $HOME/.cargo/env`
 - Check `rustc --version` and `cargo --version`
 
@@ -38,6 +38,7 @@ When investigating Tauri, be sure to reference Tauri version 2 documentation ins
 ### Installing Tauri on Ubuntu Linux
 
 Install prerequisites:
+
 ```
     sudo apt install libwebkit2gtk-4.1-dev \
         build-essential \
@@ -51,11 +52,13 @@ Install prerequisites:
 ```
 
 Install Tauri CLI:
+
 ```
     cargo install tauri-cli --version '^2.0.0' --locked
 ```
 
-Create the starter example Tauri application.  Recommend creating the vanilla html, css, javascript version of this initial app to use to for learning and reference.
+Create the starter example Tauri application. Recommend creating the vanilla html, css, javascript version of this initial app to use to for learning and reference.
+
 ```
     cargo install create-tauri-app --locked
     cargo create-tauri-app
@@ -67,18 +70,18 @@ TODO: Need to try this and document
 
 ## Getting the repo from GitHub
 
-Instead of using classic or fine-grain tokens, I chose to use [GitHub CLI](https://cli.github.com/) and use an SSH key.  So, first install GitHub CLI and do `gh auth login`.
-The title of the SSH key on my GitHub account is "BQL GitHub CLI" (/home/blepper/.ssh/id_ed25519.pub).  Passphrase stored in hint page on my Pixel 8.  Once installed and authenticated, do `gh repo list` and clone with `gh repo clone https://github.com/bqlepper/tauri-sudoku.git`
+Instead of using classic or fine-grain tokens, I chose to use [GitHub CLI](https://cli.github.com/) and use an SSH key. So, first install GitHub CLI and do `gh auth login`.
+The title of the SSH key on my GitHub account is "BQL GitHub CLI" (/home/blepper/.ssh/id_ed25519.pub). Passphrase stored in hint page on my Pixel 8. Once installed and authenticated, do `gh repo list` and clone with `gh repo clone https://github.com/bqlepper/tauri-sudoku.git`
 
 ## VSCode Plug-Ins
 
-When you open the folder with VSCode, you will probably be prompted to install the tauri and rust-analyzer VSCode plug-ins.  Those should be installed.
+When you open the folder with VSCode, you will probably be prompted to install the tauri and rust-analyzer VSCode plug-ins. Those should be installed.
 
 ## Building and running in development mode
 
 To build and run a Tauri app in Development Mode: cargo tauri dev
 
-This generates executables in the tauri-sudoku/src-tauri/target/debug directory.
+This generates executables in the build/debug directory.
 
 ### Key Features of Development Mode
 
@@ -91,7 +94,7 @@ This generates executables in the tauri-sudoku/src-tauri/target/debug directory.
 
 cargo tauri build
 
-This generates executables in the tauri-sudoku/src-tauri/target/release directory.
+This generates executables in the build/release directory.
 
 ### Key Features of Production Build
 
@@ -111,11 +114,11 @@ To build in development and run right aferwards, the following command may be us
 
 cargo tauri dev -- -- --headless
 
-Note: The double -- might seem weird.  The first one tells the Tauri build program to pass on the command line option to the cargo build program, and the second one tells the cargo build program to pass on the command line option to our own Rust main routine.
+Note: The double -- might seem weird. The first one tells the Tauri build program to pass on the command line option to the cargo build program, and the second one tells the cargo build program to pass on the command line option to our own Rust main routine.
 
 ### Key Features of Command Line Only
 
-This is a special command line option to allow only command line interaction to eliminate the Tauri GUI.  It is good for debugging.
+This is a special command line option to allow only command line interaction to eliminate the Tauri GUI. It is good for debugging.
 
 ## Template Info
 
