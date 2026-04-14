@@ -99,7 +99,8 @@ button {
 /* Sudoku grid styling */
 .sudoku-grid {
     display: grid;
-    grid-template-columns: repeat(9, 1fr);
+    grid-template-columns: repeat(9, 40px);
+    grid-template-rows: repeat(9, 40px);
     width: 360px;
     height: 360px;
     border: 2px solid black;
@@ -107,6 +108,12 @@ button {
 }
 
 .cell {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    max-width: 40px;
+    max-height: 40px;
     border: 1px solid #ccc;
     display: flex;
     align-items: center;
@@ -115,6 +122,7 @@ button {
     font-weight: bold;
     cursor: pointer;
     user-select: none;
+    box-sizing: border-box;
 }
 
 .cell:nth-child(3n) {
@@ -157,3 +165,4 @@ button {
 .message-bad {
     color: red;
 }
+

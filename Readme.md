@@ -6,12 +6,10 @@ html, css, javascript UI based on [Tauri](https://v2.tauri.app/).  I am playing 
 # TODOs
 
 - Replace simple html, css, javascript ui with React or something fancy
-- Update the Readme with what needs to be installed and exact development setup
 - Total code cleanup, coding guidelines
 - Once the extra checks start running there is a pretty serious delay sometimes,so we should solve that
     - Maybe a background thread but maybe just better user awareness that working is going on
 - Try it out on Windows again since it should work cross-platform
-- Why do cells get bigger when a number is put in.  Stay rigid size, cells
 
 # Getting started
 
@@ -80,6 +78,8 @@ When you open the folder with VSCode, you will probably be prompted to install t
 
 To build and run a Tauri app in Development Mode: cargo tauri dev
 
+This generates executables in the tauri-sudoku/src-tauri/target/debug directory.
+
 ### Key Features of Development Mode
 
 - Hot Reloading: Changes to your frontend (HTML, CSS, JavaScript) are automatically reflected without restarting the app.
@@ -87,19 +87,11 @@ To build and run a Tauri app in Development Mode: cargo tauri dev
 - Unoptimized Build: The app is built in debug mode, meaning it is not optimized for performance or size.
 - Console Logs: Logs from both the frontend (console.log) and backend (println!) are visible in the terminal or dev tools.
 
-## Building and running in headless (command-line only) Development Mode
-
-cargo tauri dev -- -- --headless
-
-Note: The double -- might seem weird.  The first one tells the Tauri build program to pass on the command line option to the cargo build program, and the second one tells the cargo build program to pass on the command line option to our own Rust main routine.
-
-### Key Features of Command Line Only
-
-This is a special command line option to allow only command line interaction to eliminate the Tauri GUI.  It is good for debugging.
-
 ## Building a production build
 
 cargo tauri build
+
+This generates executables in the tauri-sudoku/src-tauri/target/release directory.
 
 ### Key Features of Production Build
 
@@ -108,6 +100,22 @@ cargo tauri build
 - No Developer Tools: Developer tools are disabled by default to prevent users from inspecting or modifying the app.
 - No Hot Reloading: The app is static and does not reload changes automatically.
 - Standalone Executable: The app is packaged as a standalone executable that can be distributed to users.
+
+## Building and running in headless (command-line only) Development Mode
+
+The debug and release executables can be ran without a UI allowing only command line input and output.
+
+Adding the --headless option to the command line execution runs them in headless mode.
+
+To build in development and run right aferwards, the following command may be used:
+
+cargo tauri dev -- -- --headless
+
+Note: The double -- might seem weird.  The first one tells the Tauri build program to pass on the command line option to the cargo build program, and the second one tells the cargo build program to pass on the command line option to our own Rust main routine.
+
+### Key Features of Command Line Only
+
+This is a special command line option to allow only command line interaction to eliminate the Tauri GUI.  It is good for debugging.
 
 ## Template Info
 
