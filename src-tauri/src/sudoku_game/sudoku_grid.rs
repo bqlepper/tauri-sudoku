@@ -94,23 +94,34 @@ impl Grid {
 
     pub(super) fn lock_set_by_user(&mut self, row: usize, column:usize) { self.grid[row][column].lock_set_by_user(); }
 
-    // stringify the whole grid
+    // Get the grid as a JSON string
     pub(super) fn get_grid(&self) -> String {
-        let mut grid_string = String::new();
+        use serde_json::json;
+        let mut cells = Vec::new();
         for row in 0..GRID_SIZE {
             for column in 0..GRID_SIZE {
-                if self.grid[row][column].is_set_by_user() {
-                    grid_string.push('u');
-                } else {
-                    grid_string.push('-');
-                }
-                grid_string.push(match self.grid[row][column].get_value() {
-                    Err(_) => 'x',
-                    Ok(v) => (v + b'0') as char,
-                });
+                let is_user_set = self.grid[row][column].is_set_by_user();
+                let value = match self.grid[row][column].get_value() {
+                    Err(_) => -1, // Error state
+                    Ok(0) => 0,   // Empty
+                    Ok(v) => v as i32,
+                };
+
+                cells.push(json!({
+                    "value": value,
+                    "isUserSet": is_user_set,
+                    "isSolved": !is_user_set && value > 0,
+                    "isError": value == -1
+                }));
             }
         }
-        grid_string
+
+        let grid_data = json!({
+            "cells": cells,
+            "isSolved": self.is_solved()
+        });
+
+        grid_data.to_string()
     }
 
     // Get all the user settings
@@ -276,3 +287,4 @@ impl Grid {
         }
     }
 }
+

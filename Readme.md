@@ -73,6 +73,12 @@ TODO: Need to try this and document
 Instead of using classic or fine-grain tokens, I chose to use [GitHub CLI](https://cli.github.com/) and use an SSH key. So, first install GitHub CLI and do `gh auth login`.
 The title of the SSH key on my GitHub account is "BQL GitHub CLI" (/home/blepper/.ssh/id_ed25519.pub). Passphrase stored in hint page on my Pixel 8. Once installed and authenticated, do `gh repo list` and clone with `gh repo clone https://github.com/bqlepper/tauri-sudoku.git`
 
+I have had trouble with authenticating when I have not developed in the github repo for a
+long period of time.  To confirm that github cli is still authenticated, you should issue
+this command: `gh auth status`
+If it is not logged in, you may need to do gh auth login again.
+Once you are logged in, resetup automatic authentication by issuing this command: `gh auth setup-git`
+
 ## VSCode Plug-Ins
 
 When you open the folder with VSCode, you will probably be prompted to install the tauri and rust-analyzer VSCode plug-ins. Those should be installed.

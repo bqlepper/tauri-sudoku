@@ -14,12 +14,14 @@ function set_message_ok(message) {
     gameMessageElement.classList.remove("message-good");
     gameMessageElement.classList.remove("message-bad");
 }
+
 function set_message_bad(message) {
     gameMessageElement.textContent = message;
     gameMessageElement.classList.remove("message-good");
     gameMessageElement.classList.remove("message-ok");
     gameMessageElement.classList.add("message-bad");
 }
+
 function set_message_good(message) {
     gameMessageElement.textContent = message;
     gameMessageElement.classList.add("message-good");
@@ -29,49 +31,50 @@ function set_message_good(message) {
 
 async function user_input(keyPress) {
     // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    let grid_string =
+    let grid_json =
         await invoke("user_change", { user_input: parseInt(keyPress),
                                       cell_index: parseInt(selectedCell.getAttribute('data-index')) });
 
-    // Check for error message
-    if ((grid_string.charAt(0) !== '-') &&
-        (grid_string.charAt(0) !== 'u') &&
-        (grid_string.charAt(0) !== 's')) {
-        set_message_bad(grid_string);
+    // Parse JSON response
+    let gridData;
+    try {
+        gridData = JSON.parse(grid_json);
+    } catch (e) {
+        // If JSON parse fails, it's an error message
+        set_message_bad(grid_json);
         return;
     }
 
-    let solved = true;
     let error_found = false;
-    // Parse the return string that represents the grid state
-    // The string is 162 characters long, representing 81 cells
-    // Each cell is represented by two characters:
-    // First character: 'u' for user-set, 's' for solved
-    // Second character: '0' for empty, '1'-'9' for numbers, 'x' for error (invalid input)
+
+    // Update all cells from JSON data
     for (let index = 0; index <= 80; index++) {
         let nextCell = document.querySelector(`.cell[data-index="${index}"]`);
-        if (grid_string.charAt((index*2)+1) === '0') {
-            solved = false;
-            nextCell.textContent = '';
-            nextCell.classList.remove('user-set');
-            nextCell.classList.remove('solved');
-            nextCell.classList.remove('empty-error');
-        } else if (grid_string.charAt((index*2)+1) === 'x') {
+        let cellData = gridData.cells[index];
+
+        // Clear all classes first
+        nextCell.classList.remove('user-set', 'solved', 'empty-error');
+
+        if (cellData.isError) {
             error_found = true;
             nextCell.textContent = 'X';
             nextCell.classList.add('empty-error');
+        } else if (cellData.value === 0) {
+            nextCell.textContent = '';
         } else {
-            if (grid_string.charAt(index*2) === 'u') {
+            nextCell.textContent = cellData.value;
+            if (cellData.isUserSet) {
                 nextCell.classList.add('user-set');
-            } else {
+            } else if (cellData.isSolved) {
                 nextCell.classList.add('solved');
             }
-            nextCell.textContent = grid_string.charAt((index*2)+1);
         }
     }
-    if (error_found === true) {
+
+    // Update message based on grid state
+    if (error_found) {
         set_message_bad("Oops!  Something is wrong");
-    } else if (solved === true) {
+    } else if (gridData.isSolved) {
         set_message_good("Congratulations!  Puzzle Solved!");
     } else {
         set_message_ok("Use arrows or click to select cells and type 1 - 9 to set values.");
@@ -89,6 +92,7 @@ window.addEventListener("DOMContentLoaded", () => {
     clearButton.addEventListener("click", () => {
         user_input(clear_input);
     });
+
     searchButton.addEventListener("click", () => {
         set_message_ok("Searching for a solution.  Hang on...");
         user_input(solve_input);
