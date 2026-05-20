@@ -5,6 +5,17 @@ html, css, javascript UI based on [Tauri](https://v2.tauri.app/). I am playing a
 
 # TODOs
 
+- Refactor logic to use exact cover matrix with 4 constraints:
+    1. A cell can only contain one integer 1-9
+    2. Each row must contain each integer 1-9 only once
+    3. Each column must contain each integer 1-9 only once
+    4. Each of the 9 9x9 boxes of cells must contain each integer 1-9 only once
+  This will result in an exact cover matrix of 9x9x9=729 rows and 9x9x4=324 columns.
+  The refactor should also use Donald Knuth's Dancing Links algorithm to eliminate all
+  invalid values as the user enters clues and to count the number of remaining solutions.
+  Refer to these two papers:
+  https://cs.indstate.edu/~bdhome/SUDOKU.pdf
+  https://www.stolaf.edu/people/hansonr/sudoku/exactcovermatrix.htm
 - Replace simple html, css, javascript ui with React or something fancy
 - Total code cleanup, coding guidelines
 - Once the extra checks start running there is a pretty serious delay sometimes,so we should solve that
