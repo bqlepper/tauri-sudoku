@@ -7,21 +7,17 @@ html, css, javascript UI based on [Tauri](https://v2.tauri.app/). I am playing a
 
 ## TODOs
 
-- Refactor logic to use exact cover matrix with 4 constraints:
-    1. A cell can only contain one integer 1-9
-    2. Each row must contain each integer 1-9 only once
-    3. Each column must contain each integer 1-9 only once
-    4. Each of the 9 9x9 boxes of cells must contain each integer 1-9 only once
-  This will result in an exact cover matrix of 9x9x9=729 rows and 9x9x4=324 columns.
-  The refactor should also use Donald Knuth's Dancing Links algorithm to eliminate all
-  invalid values as the user enters clues and to count the number of remaining solutions.
-  Refer to these two papers:
-  [Sudoku Exact Cover Paper](https://cs.indstate.edu/~bdhome/SUDOKU.pdf)
-  [Sudoku Exact Cover Matrix Definition](https://www.stolaf.edu/people/hansonr/sudoku/exactcovermatrix.htm)
 - Replace simple html, css, javascript ui with React or something fancy
-- Total code cleanup, coding guidelines
-- Once the extra checks start running there is a pretty serious delay sometimes,so we should solve that
-  - Maybe a background thread but maybe just better user awareness that working is going on
+- Continue iterative cleanup and coding-guideline improvements
+
+## Current Status
+
+Phase 7 (cleanup and testing) has been applied to the Rust backend with:
+
+- Input-boundary hardening for the Tauri `user_change` command.
+- Refactoring cleanup in grid/cell internals to remove manual clone boilerplate.
+- Additional unit tests for command/input validation, grid bounds/conflict checks, and parser edge cases.
+- ASCII-safe headless test output formatting.
 
 ## Getting started
 
@@ -106,7 +102,17 @@ Once you are logged in, resetup automatic authentication by issuing this command
 
 When you open the folder with VSCode, you will probably be prompted to install the tauri and rust-analyzer VSCode plug-ins. Those should be installed.
 
+## Design
+
+For this code the algorithms used to resolve the Sudoku puzzle are an exact cover matrix and the dancing links algorithm.
+Refer to these two papers:
+  [Sudoku Exact Cover Paper](https://cs.indstate.edu/~bdhome/SUDOKU.pdf)
+  [Sudoku Exact Cover Matrix Definition](https://www.stolaf.edu/people/hansonr/sudoku/exactcovermatrix.htm)
+
 ## Building and running
+
+Using VSCode, there are tasks setup for the various building and test options.
+Review the [tasks.json file](.vscode/tasks.json) for the exact syntax of the commands that are explained below.
 
 ### Build Warnings and Errors
 
@@ -167,6 +173,14 @@ Note: The double -- might seem weird. The first one tells the Tauri build progra
 #### Key Features of Command Line Only
 
 This is a special command line option to allow only command line interaction to eliminate the Tauri GUI. It is good for debugging.
+
+### Building and running the Rust built-in unit test
+
+cargo test --manifest-path src-tauri/Cargo.toml
+
+### Building and running the test harness
+
+Refer to the [Test Harness Readme markdown file](test-harness.md) for information on the test harness usage.
 
 ### Template Info
 

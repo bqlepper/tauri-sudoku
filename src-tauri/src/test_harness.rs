@@ -1,4 +1,5 @@
 use crate::sudoku_game::Game;
+use crate::sudoku_game::sudoku_constants::GRID_SIDE;
 use std::fs;
 use std::path::Path;
 
@@ -6,63 +7,6 @@ pub struct TestResult {
     pub test_name: String,
     pub success: bool,
     pub message: String,
-}
-
-/// Parse a sudoku puzzle from the test file format
-/// Lines with | are puzzle lines, - means empty, numbers are values
-fn parse_puzzle(content: &str) -> Vec<(usize, usize, u8)> {
-    let mut entries = Vec::new();
-    let mut row = 0;
-
-    for line in content.lines() {
-        let line = line.trim();
-
-        // Skip empty lines
-        if line.is_empty() {
-            continue;
-        }
-
-        // Skip separator lines (lines that are all dashes, spaces, and +)
-        if line.chars().all(|c| c == '-' || c == '+' || c == ' ') {
-            continue;
-        }
-
-        // Skip comment lines (lines that start with non-digit, non-space, non-|)
-        if !line.chars().any(|c| c.is_digit(10) || c == '-' || c == '|') {
-            continue;
-        }
-
-        // Check if this is a puzzle line (contains | or has numbers/dashes)
-        if !line.contains('|') && !line.chars().any(|c| c.is_digit(10) || c == '-') {
-            continue;
-        }
-
-        // Parse the line
-        let mut col = 0;
-        for ch in line.chars() {
-            if ch.is_digit(10) {
-                let value = ch.to_digit(10).unwrap() as u8;
-                entries.push((row, col, value));
-                col += 1;
-            } else if ch == '-' {
-                // Empty cell
-                col += 1;
-            }
-            // Skip spaces, |, and other formatting characters
-        }
-
-        // Only increment row if we parsed any columns
-        if col > 0 {
-            row += 1;
-        }
-
-        // Stop after 9 rows
-        if row >= 9 {
-            break;
-        }
-    }
-
-    entries
 }
 
 /// Run a single test file
@@ -182,6 +126,71 @@ pub fn run_all_tests(test_dir: &Path) -> Vec<TestResult> {
     results
 }
 
+// Private utility functions
+/// Parse a sudoku puzzle from the test file format
+/// Lines with | are puzzle lines, - means empty, numbers are values
+fn parse_puzzle(content: &str) -> Vec<(usize, usize, u8)> {
+    let mut entries = Vec::new();
+    let mut row = 0;
+
+    for line in content.lines() {
+        let line = line.trim();
+
+        // Skip empty lines
+        if line.is_empty() {
+            continue;
+        }
+
+        // Skip separator lines (lines that are all dashes, spaces, and +)
+        if line.chars().all(|c| c == '-' || c == '+' || c == ' ') {
+            continue;
+        }
+
+        // Skip comment lines
+        if !line
+            .chars()
+            .any(|c| c.is_ascii_digit() || c == '-' || c == '|')
+        {
+            continue;
+        }
+
+        // Parse the line
+        let mut col = 0;
+        for ch in line.chars() {
+            if col >= GRID_SIDE {
+                break;
+            }
+
+            match ch {
+                '1'..='9' => {
+                    let value = ch as u8 - b'0';
+                    entries.push((row, col, value));
+                    col += 1;
+                }
+                '-' | '0' => {
+                    // Empty cell
+                    col += 1;
+                }
+                _ => {
+                    // Skip spaces, separators, and comments.
+                }
+            }
+        }
+
+        // Only increment row for complete grid lines.
+        if col == GRID_SIDE {
+            row += 1;
+        }
+
+        // Stop after 9 rows
+        if row >= GRID_SIDE {
+            break;
+        }
+    }
+
+    entries
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -241,5 +250,41 @@ mod tests {
 
         // Also verify we have exactly the same entries (not just a prefix)
         assert_eq!(entries, expected, "Parsed entries don't match expected entries");
+    }
+
+    #[test]
+    fn parse_puzzle_treats_zero_as_empty() {
+        let content = r#" 0  -  - | -  -  - | -  -  -
+ -  -  - | -  -  - | -  -  -
+ -  -  - | -  -  - | -  -  -
+---------+---------+---------
+ -  -  - | -  -  - | -  -  -
+ -  -  - | -  -  - | -  -  -
+ -  -  - | -  -  - | -  -  -
+---------+---------+---------
+ -  -  - | -  -  - | -  -  -
+ -  -  - | -  -  - | -  -  -
+ -  -  - | -  -  - | -  -  -"#;
+
+        let entries = parse_puzzle(content);
+        assert!(entries.is_empty());
+    }
+
+    #[test]
+    fn parse_puzzle_ignores_incomplete_rows() {
+        let content = r#" 1  -  - | -  -  - | -  -  -
+ -  -  - | -  -  - | -  -
+ -  -  - | -  -  - | -  -  -
+---------+---------+---------
+ -  -  - | -  -  - | -  -  -
+ -  -  - | -  -  - | -  -  -
+ -  -  - | -  -  - | -  -  -
+---------+---------+---------
+ -  -  - | -  -  - | -  -  -
+ -  -  - | -  -  - | -  -  -
+ -  -  - | -  -  - | -  -  -"#;
+
+        let entries = parse_puzzle(content);
+        assert_eq!(entries, vec![(0, 0, 1)]);
     }
 }

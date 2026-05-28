@@ -41,10 +41,10 @@ fn main() {
 
     for result in &results {
         if result.success {
-            println!("✓ {} - {}", result.test_name, result.message);
+            println!("[PASS] {} - {}", result.test_name, result.message);
             passed += 1;
         } else {
-            println!("✗ {} - {}", result.test_name, result.message);
+            println!("[FAIL] {} - {}", result.test_name, result.message);
             failed += 1;
         }
     }
@@ -55,10 +55,10 @@ fn main() {
     println!("Failed: {}", failed);
 
     if failed == 0 {
-        println!("\n🎉 All tests passed!");
+        println!("\nAll tests passed!");
         std::process::exit(0);
     } else {
-        println!("\n❌ Some tests failed.");
+        println!("\nSome tests failed.");
         std::process::exit(1);
     }
 }

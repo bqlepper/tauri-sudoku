@@ -1,49 +1,166 @@
 use super::Grid;
 
-impl Grid {
-    // Try all remaining potential values and detect if they lead to an error situation (cell with no potential values)
-    // If so, remove that potential value from the cell and run all the checks again.)
-    fn run_try_checks (&mut self) -> bool {
-        let mut result = false;
-        // Find unsolved cells
-        for row in 0..super::GRID_SIZE {
-            for column in 0..super::GRID_SIZE {
-                if self.grid[row][column].is_solved() {
-                    continue;
-                }
-                for value in self.grid[row][column].get_value_list() {
-                    let mut trial_grid = self.clone();
-                    if let Ok(changed) = trial_grid.set_value(row, column, value) {
-                        if changed {
-                            if let Ok(_) = trial_grid.run_all_checks() {
-                                continue; // This value is OK, move on to the next value
-                            }
-                        }
-                    }
+const MAX_SOLUTION_COUNT: usize = 50;
+const ALL_VALUES_MASK: u16 = 0x1ff;
 
-                    let trial_remove_result = trial_grid.grid[row][column].remove_value(value);
-                    if trial_remove_result.is_ok() {
-                        let trial_after_remove_result = trial_grid.run_all_checks();
-                        if trial_after_remove_result.is_ok() {
-                            self.replace(&trial_grid.grid);
-                            result =   true;
-                            break; // Need to restart the whole process since the grid has changed
-                        }
-                    }
-                }
-                if result { break }; // Need to restart the whole process since the grid has changed
+impl Grid {
+    pub(crate) fn run_exact_cover_checks(&mut self) {
+        if self.should_start_extra_checks() {
+            if self.apply_exact_cover_checks().is_ok() {
+                debug_assert!(self.is_valid(), "Invalid after running extra checks");
             }
-            if result { break }; // Need to restart the whole process since the grid has changed
+            return;
         }
-        result
+
+        if self.apply_simple_checks().is_ok() {
+            debug_assert!(
+                self.is_valid(),
+                "Invalid after running direct candidate checks"
+            );
+        }
     }
 
+    fn apply_simple_checks(&mut self) -> Result<(), String> {
+        loop {
+            let mut changed_any = false;
+
+            for row in 0..super::GRID_SIZE {
+                for column in 0..super::GRID_SIZE {
+                    if self.grid[row][column].is_solved() {
+                        continue;
+                    }
+
+                    let direct_mask = self.direct_constraint_mask_for_cell(row, column)?;
+                    let current_mask = self.grid[row][column].candidate_mask();
+                    let narrowed_mask = current_mask & direct_mask;
+
+                    if narrowed_mask == 0 {
+                        return Err(format!(
+                            "No valid candidates remain at row {} column {}",
+                            row + 1,
+                            column + 1
+                        ));
+                    }
+
+                    if self.grid[row][column]
+                        .set_values(narrowed_mask)
+                        .map_err(|_| {
+                            format!(
+                                "Invalid candidate mask at row {} column {}",
+                                row + 1,
+                                column + 1
+                            )
+                        })?
+                    {
+                        changed_any = true;
+                    }
+                }
+            }
+
+            if !changed_any {
+                return Ok(());
+            }
+        }
+    }
+
+    fn direct_constraint_mask_for_cell(&self, row: usize, column: usize) -> Result<u16, String> {
+        let mut mask = ALL_VALUES_MASK;
+
+        for check_column in 0..super::GRID_SIZE {
+            if check_column == column || !self.grid[row][check_column].is_solved() {
+                continue;
+            }
+            let value = self.grid[row][check_column].get_value().map_err(|_| {
+                format!(
+                    "Unexpected solved-cell error at row {} column {}",
+                    row + 1,
+                    check_column + 1
+                )
+            })?;
+            mask &= !value_to_bit(value);
+        }
+
+        for check_row in 0..super::GRID_SIZE {
+            if check_row == row || !self.grid[check_row][column].is_solved() {
+                continue;
+            }
+            let value = self.grid[check_row][column].get_value().map_err(|_| {
+                format!(
+                    "Unexpected solved-cell error at row {} column {}",
+                    check_row + 1,
+                    column + 1
+                )
+            })?;
+            mask &= !value_to_bit(value);
+        }
+
+        let start_row = (row / super::BOX_SIDE) * super::BOX_SIDE;
+        let end_row = start_row + super::BOX_SIDE;
+        let start_column = (column / super::BOX_SIDE) * super::BOX_SIDE;
+        let end_column = start_column + super::BOX_SIDE;
+        for check_row in start_row..end_row {
+            for check_column in start_column..end_column {
+                if (check_row == row && check_column == column)
+                    || !self.grid[check_row][check_column].is_solved()
+                {
+                    continue;
+                }
+                let value = self.grid[check_row][check_column].get_value().map_err(|_| {
+                    format!(
+                        "Unexpected solved-cell error at row {} column {}",
+                        check_row + 1,
+                        check_column + 1
+                    )
+                })?;
+                mask &= !value_to_bit(value);
+            }
+        }
+
+        Ok(mask)
+    }
+
+    // Returns true if at least one solution exists.
+    pub(crate) fn is_solvable(&self) -> bool {
+        if self.is_solved() {
+            return true;
+        }
+
+        match self.count_exact_cover_solutions_with_cap(1) {
+            Ok(count) => count > 0,
+            Err(_) => false,
+        }
+    }
+
+    // Counts solutions with a cap of 50 to preserve current command/UI contract.
+    pub(crate) fn count_solutions(&self) -> Result<usize, usize> {
+        if self.is_solved() {
+            println!("Already solved");
+            self.print_grid();
+            return Err(1);
+        }
+
+        let solution_count = match self.count_exact_cover_solutions_with_cap(MAX_SOLUTION_COUNT) {
+            Ok(count) => count,
+            Err(_) => return Err(0),
+        };
+
+        println!("Found {} solutions", solution_count);
+        if solution_count >= MAX_SOLUTION_COUNT {
+            return Err(MAX_SOLUTION_COUNT);
+        } else if solution_count == 0 {
+            return Err(0);
+        }
+        Ok(solution_count)
+    }
+
+    // Private utility functions
     // Return true only if the user has entered enough clues
-    // These extra checks are time consuming trial-and-error checks, so theh should not be used until
+    // These extra checks are time consuming, so they should not be used until
     // the user has put in enough clues to perhaps make the puzzle solvable.
     // 17 is supposedly the minimum number of clues for a valid Sudoku puzzle with one solution.
+    // Since exact-cover checks are fast now, start them earlier.
     fn should_start_extra_checks(&self) -> bool {
-        const START_EXTRA_CHECKS: usize = 16;
+        const START_EXTRA_CHECKS: usize = 10;
         let mut solved_count = 0;
         for row in 0..super::GRID_SIZE {
             for column in 0..super::GRID_SIZE {
@@ -55,117 +172,100 @@ impl Grid {
                 }
             }
         }
-        return false;
-    }
-
-    pub(crate) fn run_extra_checks(&mut self) {
-
-        if self.should_start_extra_checks() {
-            loop {
-                if !self.run_try_checks() {
-                    break;
-                }
-            }
-            assert!(self.is_valid(), "Invalid after running extra checks!");
-        }
-    }
-
-    // Uses recursive solution search below to search for solutions.  If only 1 is found, the puzzle is solved.
-    // The search stops immedieately if more than 1 solution is found.
-    pub(crate) fn run_final_check(&mut self) {
-
-        if !self.is_solved() && self.should_start_extra_checks() {
-            let mut solutions: Vec<Grid> = Vec::new();
-            self.solution_search(self.clone(), &mut solutions, 2);
-            assert!(solutions.len() > 0, "No solutions found after running extra checks!");
-            if solutions.len() == 1 {
-                self.replace(&solutions[0].grid);
-            }
-        }
-    }
-
-    // Uses recursive solution search below to search for solutions.
-    // The search stops immedieately and returns true if any solution is found.
-    // Returns false if no solutions are found.
-    pub(crate) fn is_solvable (&self) -> bool {
-        if !self.should_start_extra_checks() || self.is_solved() {
-            return true;
-        }
-        let mut solutions: Vec<Grid> = Vec::new();
-        self.solution_search(self.clone(), &mut solutions, 1);
-        solutions.len() > 0
-    }
-
-    // Uses recursive solution search below to search for solutions.
-    // The search stops immedieately if the maximum number of solutions is found.
-    // Returns OK and number of solutions found, or Err(0) if none are found.
-    pub(crate) fn count_solutions (&self) -> Result<usize, usize> {
-        const MAX_SOLUTIONS: usize = 5;
-        if self.is_solved() {
-            println!("Already solved!!!!");
-            self.print_grid();
-            return Err(1);
-        }
-        let mut solutions: Vec<Grid> = Vec::new();
-        self.solution_search(self.clone(), &mut solutions, 5);
-        println!("Found {} solutions", solutions.len());
-        if solutions.len() >= MAX_SOLUTIONS {
-            return Err(5);
-        } else if solutions.len() == 0 {
-            return Err(0);
-        }
-        Ok(solutions.len())
-    }
-
-    // Recursive method to try all remaining potential values and count the number of solutions that are still valid
-    fn solution_search (&self,
-                        in_grid: Grid,
-                        solutions: &mut Vec<Grid>,
-                        max_solutions: usize) {
-
-        assert!(self.is_valid(), "Called solution_search with invalid puzzle!");
-        assert!(!self.is_solved(), "Called solution_search with solvedd puzzle!");
-        assert!(solutions.len() < max_solutions, "Called solution_search with already enough solutions!");
-
-        // Find first non-solved cell
-        let mut row: usize = 0;
-        let mut column: usize = 0;
-        'outer: for check_row in 0..super::GRID_SIZE {
-            for check_column in 0..super::GRID_SIZE {
-                if in_grid.grid[check_row][check_column].is_solved() {
-                    continue;
-                } else {
-                    row = check_row;
-                    column = check_column;
-                    break 'outer;
-                }
-            }
-        }
-
-        for value in in_grid.grid[row][column].get_value_list() {
-            let mut next_grid = in_grid.clone();
-            match next_grid.set_value(row, column, value) {
-                Err(_) => { continue; },
-                Ok(changed) => {
-                    assert!(changed, "Value {} in row {}, column {} was already set!", value, row, column);
-                    match next_grid.run_all_checks() {
-                        Err(_) => { continue;},
-                        Ok(_) => {
-                            next_grid.run_extra_checks();
-                            if next_grid.is_solved() { // If we've found a possible solution
-                                solutions.push(next_grid.clone());
-                                return;
-                            } else {
-                                self.solution_search(next_grid, solutions, max_solutions);
-                            }
-                        },
-                    }
-                },
-            }
-            if solutions.len() >= max_solutions {
-                return;
-            }
-        }
+        false
     }
 }
 
+fn value_to_bit(value: u8) -> u16 {
+    1u16 << u32::from(value - 1)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Grid, MAX_SOLUTION_COUNT};
+
+    fn solved_grid_values() -> [[u8; 9]; 9] {
+        [
+            [5, 3, 4, 6, 7, 8, 9, 1, 2],
+            [6, 7, 2, 1, 9, 5, 3, 4, 8],
+            [1, 9, 8, 3, 4, 2, 5, 6, 7],
+            [8, 5, 9, 7, 6, 1, 4, 2, 3],
+            [4, 2, 6, 8, 5, 3, 7, 9, 1],
+            [7, 1, 3, 9, 2, 4, 8, 5, 6],
+            [9, 6, 1, 5, 3, 7, 2, 8, 4],
+            [2, 8, 7, 4, 1, 9, 6, 3, 5],
+            [3, 4, 5, 2, 8, 6, 1, 7, 9],
+        ]
+    }
+
+    fn build_grid_with_omitted_digits(first_omitted: u8, second_omitted: u8) -> Grid {
+        let solved = solved_grid_values();
+        let mut grid = Grid::new();
+
+        for (row, row_values) in solved.iter().enumerate() {
+            for (column, &value) in row_values.iter().enumerate() {
+                if value == first_omitted || value == second_omitted {
+                    continue;
+                }
+                assert_eq!(grid.set_value(row, column, value), Ok(true));
+            }
+        }
+
+        grid
+    }
+
+    fn assert_has_multiple_solutions_below_cap(first_omitted: u8, second_omitted: u8) {
+        let grid = build_grid_with_omitted_digits(first_omitted, second_omitted);
+        let count = grid
+            .count_exact_cover_solutions_with_cap(MAX_SOLUTION_COUNT)
+            .expect("counting should succeed for a valid partially-clued puzzle");
+
+        assert!(
+            (2..MAX_SOLUTION_COUNT).contains(&count),
+            "expected 2..{} solutions when omitting digits {} and {}, got {}",
+            MAX_SOLUTION_COUNT,
+            first_omitted,
+            second_omitted,
+            count
+        );
+    }
+
+    #[test]
+    fn detects_multiple_solutions_below_cap_when_omitting_1_and_2() {
+        assert_has_multiple_solutions_below_cap(1, 2);
+    }
+
+    #[test]
+    fn detects_multiple_solutions_below_cap_when_omitting_3_and_4() {
+        assert_has_multiple_solutions_below_cap(3, 4);
+    }
+
+    #[test]
+    fn detects_multiple_solutions_below_cap_when_omitting_5_and_6() {
+        assert_has_multiple_solutions_below_cap(5, 6);
+    }
+
+    #[test]
+    fn detects_multiple_solutions_below_cap_when_omitting_8_and_9() {
+        assert_has_multiple_solutions_below_cap(8, 9);
+    }
+
+    #[test]
+    fn direct_checks_solve_single_missing_value_in_box_before_extra_check_threshold() {
+        let mut grid = Grid::new();
+
+        assert_eq!(grid.set_value(0, 0, 1), Ok(true));
+        assert_eq!(grid.set_value(0, 1, 2), Ok(true));
+        assert_eq!(grid.set_value(0, 2, 3), Ok(true));
+        assert_eq!(grid.set_value(1, 0, 6), Ok(true));
+        assert_eq!(grid.set_value(1, 1, 5), Ok(true));
+        assert_eq!(grid.set_value(1, 2, 4), Ok(true));
+        assert_eq!(grid.set_value(2, 0, 7), Ok(true));
+        assert_eq!(grid.set_value(2, 2, 8), Ok(true));
+
+        grid.run_exact_cover_checks();
+
+        assert_eq!(grid.grid[2][1].get_value(), Ok(9));
+        assert!(!grid.grid[2][1].is_set_by_user());
+    }
+}

@@ -5,6 +5,7 @@ This document describes the automated test harness for the Sudoku solver.
 ## Overview
 
 The test harness automatically:
+
 1. Reads Sudoku puzzle files from the `test/` directory
 2. Parses the puzzle format (supports the formatted grid with `|` and `-` separators)
 3. Inputs each value into the solver
@@ -15,7 +16,7 @@ The test harness automatically:
 
 Test files should be in `.txt` format with the following structure:
 
-```
+```text
  8  -  - | -  -  - | -  -  -
  -  -  3 | 6  -  - | -  -  -
  -  7  - | -  9  - | 2  -  -
@@ -63,6 +64,7 @@ cargo run --bin test_runner ../../test
 ```
 
 The test runner exits with:
+
 - Exit code 0 if all tests pass
 - Exit code 1 if any tests fail
 
@@ -78,41 +80,42 @@ cargo build --release --bin test_runner
 
 Example output:
 
-```
+```text
 === Sudoku Test Runner ===
 Test directory: ../../test
 
 === Test Results ===
 
-✓ test1.txt - Puzzle solved successfully
-✓ test2.txt - Puzzle solved successfully
-✓ test3.txt - Puzzle solved successfully
-✓ test4.txt - Puzzle solved successfully
-✓ test5.txt - Puzzle solved successfully
+[PASS] test1.txt - Puzzle solved successfully
+[PASS] test2.txt - Puzzle solved successfully
+[PASS] test3.txt - Puzzle solved successfully
+[PASS] test4.txt - Puzzle solved successfully
+[PASS] test5.txt - Puzzle solved successfully
 
 === Summary ===
 Total:  5
 Passed: 5
 Failed: 0
 
-🎉 All tests passed!
+All tests passed!
 ```
 
 If a test fails:
 
-```
-✗ test_bad.txt - Error setting value 5 at (1, 1): 5 is not valid for row 1 column 1!
+```text
+[FAIL] test_bad.txt - Error setting value 5 at (1, 1): 5 is not valid for row 1 column 1!
 ```
 
 or
 
-```
-✗ test_incomplete.txt - Puzzle not solved after entering all values
+```text
+[FAIL] test_incomplete.txt - Puzzle not solved after entering all values
 ```
 
 ## Test Results Structure
 
 Each test returns:
+
 - `test_name`: The filename of the test
 - `success`: Boolean indicating pass/fail
 - `message`: Descriptive message about the result
@@ -167,6 +170,7 @@ The test runner returns appropriate exit codes for CI/CD systems.
 ## Future Enhancements
 
 Possible improvements:
+
 - Support for additional puzzle formats (CSV, JSON)
 - Performance benchmarking
 - Test coverage reporting

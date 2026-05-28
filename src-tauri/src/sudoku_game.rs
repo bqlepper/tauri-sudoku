@@ -1,6 +1,8 @@
 use sudoku_grid::Grid;
 
+pub mod exact_cover;
 pub mod sudoku_grid;
+pub mod sudoku_constants;
 
 pub struct Game {
     grid: Grid, // The grid holds 9x9 grid of cells
@@ -33,8 +35,8 @@ impl Game {
     }
 
     // Clear a value that a user has previously set
-    pub(super) fn user_delete_value(&mut self, row: usize, column: usize) {
-        self.grid.user_delete_value(row, column);
+    pub(super) fn user_delete_value(&mut self, row: usize, column: usize) -> Result<(), String> {
+        self.grid.user_delete_value(row, column)
     }
 
     // Check if the puzzle is solved
@@ -53,23 +55,19 @@ impl Game {
             Err(out_msg) => return Err(out_msg),
             Ok(changed) => {
                 if changed {
-                    match trial_grid.run_all_checks() {
-                        Err(_) => {
-                            return Err(format!("{value} is not valid for row {} column {}!", row+1, column+1));
-                        },
-                        Ok(_) => {
-                            trial_grid.run_extra_checks();
-                            trial_grid.run_final_check();
-                            if trial_grid.is_solved() {
-                                println!("Puzzle is solved!");
-                                self.grid = trial_grid;
-                            } else if trial_grid.is_solvable() {
-                                trial_grid.lock_set_by_user(row, column);
-                                self.grid = trial_grid;
-                            } else{
-                                return Err(format!("Setting {} at row {} column {} leads to no possible solutions!", value, row+1, column+1));
-                            }
-                        },
+                    if trial_grid.has_direct_conflict(row, column, value) {
+                        return Err(format!("{value} is not valid for row {} column {}!", row+1, column+1));
+                    }
+
+                    trial_grid.run_exact_cover_checks();
+                    if trial_grid.is_solved() {
+                        println!("Puzzle is solved!");
+                        self.grid = trial_grid;
+                    } else if trial_grid.is_solvable() {
+                        trial_grid.lock_set_by_user(row, column);
+                        self.grid = trial_grid;
+                    } else {
+                        return Err(format!("Setting {} at row {} column {} leads to no possible solutions!", value, row+1, column+1));
                     }
                 }
             },
