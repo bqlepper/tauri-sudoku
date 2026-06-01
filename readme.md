@@ -8,16 +8,7 @@ html, css, javascript UI based on [Tauri](https://v2.tauri.app/). I am playing a
 ## TODOs
 
 - Replace simple html, css, javascript ui with React or something fancy
-- Continue iterative cleanup and coding-guideline improvements
-
-## Current Status
-
-Phase 7 (cleanup and testing) has been applied to the Rust backend with:
-
-- Input-boundary hardening for the Tauri `user_change` command.
-- Refactoring cleanup in grid/cell internals to remove manual clone boilerplate.
-- Additional unit tests for command/input validation, grid bounds/conflict checks, and parser edge cases.
-- ASCII-safe headless test output formatting.
+- Follow Phase 8 implementation/deployment plan: [Phase 8 Web UI + Deployment Plan](docs/plans/phase-8-web-ui-deployment-plan.md)
 
 ## Getting started
 
@@ -38,9 +29,16 @@ Use `rustup`, Rust's official installer which installs `rustc` the rust compiler
 
 - In powershell issue this command `winget install Rustlang.Rustup`
 
-#### Installing Cargo and Rust on other Linux distros
+#### Installing Cargo and Rust on RedHat based Linux distros
 
-TODO: Need to try this and document
+Use `rustup`, Rust's official installer which installs `rustc` the rust compiler and `cargo` the build tool and package manager for rust.
+
+- First some prerequisites
+  - `sudo dnf install -y curl gcc gcc-c++ make`
+  - `sudo dnf install -y openssl-devel pkgconfig`
+- Now get rustup
+  - `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
+  - If the above command fails, you may need to copy the rustup installer to a location where you can run it.
 
 ### Installing Tauri
 
@@ -83,14 +81,48 @@ Create the starter example Tauri application. Recommend creating the vanilla htm
   - Need to make sure Desktop development with C++ is included
 - Use cargo to install tauri cli: `cargo install tauri-cli --version "^2.0.0"`
 
-#### Installing Tauri on other Linux distros
+#### Installing Tauri on RedHat Linux distros
 
-TODO: Need to try this and document
+Install prerequisites:
+
+```text
+sudo dnf install -y \
+  curl \
+  wget \
+  file \
+  openssl-devel \
+  libappindicator-gtk3-devel \
+  librsvg2-devel \
+  patchelf \
+  webkit2gtk3-devel \
+  gtk3-devel
+```
+
+Also: `sudo dnf groupinstall -y "Development Tools"`
+
+Install Tauri CLI:
+
+```text
+    cargo install tauri-cli --version '^2.0.0' --locked
+```
+
+Note: I ran into a situation where my /tmp drive was mounted with noexec.
+So, I had to create a temp directory in my home drive and rerun this cargo install tauri-cli with a different temp directory.
+`mkdir -p "$HOME/tmp"`
+`TMPDIR="$HOME/tmp" cargo install tauri-cli --version "^2.0.0" --locked`
 
 ### Getting the repo from GitHub
 
-Instead of using classic or fine-grain tokens, I chose to use [GitHub CLI](https://cli.github.com/) and use an SSH key. So, first install GitHub CLI and do `gh auth login`.
-The title of the SSH key on my GitHub account is "BQL GitHub CLI" (/home/blepper/.ssh/id_ed25519.pub). Passphrase stored in hint page on my Pixel 8. Once installed and authenticated, do `gh repo list` and clone with `gh repo clone https://github.com/bqlepper/tauri-sudoku.git`
+Instead of using classic or fine-grain tokens, I chose to use [GitHub CLI](https://cli.github.com/).
+So, first install GitHub CLI and do `gh auth login`.
+Choose GitHub.com for the 'where you use GitHub' question.
+Choose HTTPS for your preferred protocol.
+Choose to Authenticate Git with your GitHub credentials.
+If you are working on a device where you can use a web browser, choose to authenticate with the web browser login.
+If not, you will have to create an SSH key and passphrase.
+The title of the SSH key on my GitHub account is "BQL GitHub CLI" (/home/blepper/.ssh/id_ed25519.pub).
+Passphrase stored in hint page on my Pixel 8.
+Once installed and authenticated, do `gh repo list` and clone with `gh repo clone https://github.com/bqlepper/tauri-sudoku.git`
 
 I have had trouble with authenticating when I have not developed in the github repo for a
 long period of time.  To confirm that github cli is still authenticated, you should issue
@@ -106,8 +138,8 @@ When you open the folder with VSCode, you will probably be prompted to install t
 
 For this code the algorithms used to resolve the Sudoku puzzle are an exact cover matrix and the dancing links algorithm.
 Refer to these two papers:
-  [Sudoku Exact Cover Paper](https://cs.indstate.edu/~bdhome/SUDOKU.pdf)
-  [Sudoku Exact Cover Matrix Definition](https://www.stolaf.edu/people/hansonr/sudoku/exactcovermatrix.htm)
+    [Sudoku Exact Cover Paper](https://cs.indstate.edu/~bdhome/SUDOKU.pdf)
+    [Sudoku Exact Cover Matrix Definition](https://www.stolaf.edu/people/hansonr/sudoku/exactcovermatrix.htm)
 
 ## Building and running
 

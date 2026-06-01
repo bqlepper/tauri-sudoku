@@ -7,6 +7,11 @@
             "label": "Build Tauri Development Mode",
             "type": "shell",
             "command": "cargo tauri dev",
+            "options": {
+                "env": {
+                    "CARGO_TARGET_DIR": "${workspaceFolder}/build/cargo-target"
+                }
+            },
             "group": {
                 "kind": "build",
                 "isDefault": true
@@ -20,6 +25,11 @@
             "label": "Build Tauri Production Mode",
             "type": "shell",
             "command": "cargo tauri build",
+            "options": {
+                "env": {
+                    "CARGO_TARGET_DIR": "${workspaceFolder}/build/cargo-target"
+                }
+            },
             "group": {
                 "kind": "build",
                 "isDefault": false
@@ -33,10 +43,45 @@
             "label": "Build Command Line Only Debug",
             "type": "shell",
             "command": "cargo tauri dev -- -- --headless",
+            "options": {
+                "env": {
+                    "CARGO_TARGET_DIR": "${workspaceFolder}/build/cargo-target"
+                }
+            },
             "group": {
                 "kind": "build",
                 "isDefault": false
             },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+        },
+        {
+            "label": "Run Rust Unit Tests",
+            "type": "shell",
+            "command": "cargo test --manifest-path src-tauri/Cargo.toml",
+            "options": {
+                "env": {
+                    "CARGO_TARGET_DIR": "${workspaceFolder}/build/cargo-target"
+                }
+            },
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+        },
+        {
+            "label": "Build and Run Test Harness Executable",
+            "type": "shell",
+            "command": "cargo run --manifest-path src-tauri/Cargo.toml --bin test_runner -- \"${workspaceFolder}/test\"",
+            "options": {
+                "env": {
+                    "CARGO_TARGET_DIR": "${workspaceFolder}/build/cargo-target"
+                }
+            },
+            "group": "test",
             "presentation": {
                 "reveal": "always",
                 "panel": "new"

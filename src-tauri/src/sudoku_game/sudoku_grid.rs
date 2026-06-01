@@ -222,7 +222,7 @@ impl Grid {
             for (row, row_arr) in self.grid.iter().enumerate() {
                 if row != 0 && row%BOX_SIDE == 0
                 {
-                    println!("{}", "------------+-----------+-----------".bright_cyan());
+                    println!("{}", "============+===========+===========".bright_cyan());
                 }
 
                 for row_index in 0..BOX_SIDE {
@@ -252,9 +252,9 @@ impl Grid {
                                         if value == 9 { chars[2] = '9' };
                                     }
                                 } else if value == 0 {
-                                    chars[0] = '-';
-                                    chars[1] = '-';
-                                    chars[2] = '-';
+                                    chars[0] = '.';
+                                    chars[1] = '.';
+                                    chars[2] = '.';
                                     if row_index == 0 {
                                         if self.grid[row][column].is_value_valid(1) { chars[0] = '1' };
                                         if self.grid[row][column].is_value_valid(2) { chars[1] = '2' };
@@ -290,7 +290,7 @@ impl Grid {
                     }
                     println!();
                     if row_index == 2 {
-                        println!("{}", "------------+-----------+-----------".bright_cyan());
+                        println!("{}", "============+===========+===========".bright_cyan());
                     }
                 }
             }
@@ -298,7 +298,7 @@ impl Grid {
             for (row, row_arr) in self.grid.iter().enumerate() {
                 if row != 0 && row%BOX_SIDE == 0
                 {
-                    println!("{}", "---------+---------+---------".bright_cyan());
+                    println!("{}", "=========+=========+=========".bright_cyan());
                 }
 
                 for (column, val) in row_arr.iter().enumerate() {
@@ -314,7 +314,7 @@ impl Grid {
                             if self.grid[row][column].is_set_by_user() {
                                 print!("{} ", value.to_string().bright_green());
                             } else if value == 0 {
-                                print!("{} ", "-".bright_yellow());
+                                print!("{} ", ".".bright_yellow());
                             } else {
                                 print!("{} ", value.to_string().bright_yellow());
                             }

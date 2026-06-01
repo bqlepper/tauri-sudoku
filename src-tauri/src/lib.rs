@@ -221,7 +221,6 @@ fn run_tests() {
         "../../test",           // From cargo run location
         "../test",              // Alternative
         "test",                 // If running from project root
-        "src-rust-sudoku/test", // From repo root
     ];
 
     let test_dir = test_paths

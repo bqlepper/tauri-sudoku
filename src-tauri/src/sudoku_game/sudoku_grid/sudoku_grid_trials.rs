@@ -2,6 +2,8 @@ use super::Grid;
 
 const MAX_SOLUTION_COUNT: usize = 50;
 const ALL_VALUES_MASK: u16 = 0x1ff;
+const START_EXTRA_CHECKS: usize = 10;
+const START_SOLUTION_COUNT: usize = 16;
 
 impl Grid {
     pub(crate) fn run_exact_cover_checks(&mut self) {
@@ -153,26 +155,54 @@ impl Grid {
         Ok(solution_count)
     }
 
+    pub(crate) fn print_remaining_solution_count_for_user_clues(&self) {
+        let solution_count = self.solved_count();
+        if solution_count < START_SOLUTION_COUNT {
+            return;
+        }
+
+        match self.remaining_solution_count_for_user_clues() {
+            Some(Ok(count)) => {
+                if count >= MAX_SOLUTION_COUNT {
+                    println!("There are at least {} solutions remaining", count);
+                } else {
+                    println!("There are exactly {} remaining solutions", count);
+                }
+            }
+            Some(Err(error)) => {
+                println!("Unable to count remaining solutions: {}", error);
+            }
+            None => {}
+        }
+    }
+
     // Private utility functions
     // Return true only if the user has entered enough clues
     // These extra checks are time consuming, so they should not be used until
     // the user has put in enough clues to perhaps make the puzzle solvable.
     // 17 is supposedly the minimum number of clues for a valid Sudoku puzzle with one solution.
     // Since exact-cover checks are fast now, start them earlier.
+    fn solved_count(&self) -> usize {
+        self.grid
+            .iter()
+            .flat_map(|row| row.iter())
+            .filter(|cell| cell.is_solved())
+            .count()
+    }
+
     fn should_start_extra_checks(&self) -> bool {
-        const START_EXTRA_CHECKS: usize = 10;
-        let mut solved_count = 0;
-        for row in 0..super::GRID_SIZE {
-            for column in 0..super::GRID_SIZE {
-                if self.grid[row][column].is_solved() {
-                    solved_count += 1;
-                }
-                if solved_count >= START_EXTRA_CHECKS {
-                    return true;
-                }
-            }
+        if self.solved_count() >= START_EXTRA_CHECKS {
+            return true;
         }
         false
+    }
+
+    fn remaining_solution_count_for_user_clues(&self) -> Option<Result<usize, String>> {
+        if self.solved_count() < START_SOLUTION_COUNT {
+            return None;
+        }
+
+        Some(self.count_exact_cover_solutions_with_cap(MAX_SOLUTION_COUNT))
     }
 }
 
@@ -182,7 +212,7 @@ fn value_to_bit(value: u8) -> u16 {
 
 #[cfg(test)]
 mod tests {
-    use super::{Grid, MAX_SOLUTION_COUNT};
+    use super::{Grid, MAX_SOLUTION_COUNT, START_SOLUTION_COUNT};
 
     fn solved_grid_values() -> [[u8; 9]; 9] {
         [
@@ -208,6 +238,42 @@ mod tests {
                     continue;
                 }
                 assert_eq!(grid.set_value(row, column, value), Ok(true));
+            }
+        }
+
+        grid
+    }
+
+    fn build_user_clue_grid_with_omitted_digits(first_omitted: u8, second_omitted: u8) -> Grid {
+        let solved = solved_grid_values();
+        let mut grid = Grid::new();
+
+        for (row, row_values) in solved.iter().enumerate() {
+            for (column, &value) in row_values.iter().enumerate() {
+                if value == first_omitted || value == second_omitted {
+                    continue;
+                }
+                assert_eq!(grid.set_value(row, column, value), Ok(true));
+                grid.lock_set_by_user(row, column);
+            }
+        }
+
+        grid
+    }
+
+    fn build_grid_with_user_clues(clue_count: usize) -> Grid {
+        let solved = solved_grid_values();
+        let mut grid = Grid::new();
+        let mut set_count = 0usize;
+
+        for (row, row_values) in solved.iter().enumerate() {
+            for (column, &value) in row_values.iter().enumerate() {
+                if set_count >= clue_count {
+                    return grid;
+                }
+                assert_eq!(grid.set_value(row, column, value), Ok(true));
+                grid.lock_set_by_user(row, column);
+                set_count += 1;
             }
         }
 
@@ -251,6 +317,15 @@ mod tests {
     }
 
     #[test]
+    fn exact_remaining_solution_count_matches_known_high_clue_case() {
+        let grid = build_user_clue_grid_with_omitted_digits(1, 3);
+
+        assert_eq!(grid.solved_count(), 63);
+        assert!(grid.solved_count() > START_SOLUTION_COUNT);
+        assert_eq!(grid.remaining_solution_count_for_user_clues(), Some(Ok(4)));
+    }
+
+    #[test]
     fn direct_checks_solve_single_missing_value_in_box_before_extra_check_threshold() {
         let mut grid = Grid::new();
 
@@ -267,5 +342,20 @@ mod tests {
 
         assert_eq!(grid.grid[2][1].get_value(), Ok(9));
         assert!(!grid.grid[2][1].is_set_by_user());
+    }
+
+    #[test]
+    fn exact_remaining_solution_count_is_not_attempted_below_user_clue_threshold() {
+        let grid = build_grid_with_user_clues(START_SOLUTION_COUNT - 1);
+        assert!(grid.remaining_solution_count_for_user_clues().is_none());
+    }
+
+    #[test]
+    fn exact_remaining_solution_count_runs_after_user_clue_threshold() {
+        let grid = build_grid_with_user_clues(80);
+        assert_eq!(
+            grid.remaining_solution_count_for_user_clues(),
+            Some(Ok(1))
+        );
     }
 }

@@ -128,63 +128,51 @@ pub fn run_all_tests(test_dir: &Path) -> Vec<TestResult> {
 
 // Private utility functions
 /// Parse a sudoku puzzle from the test file format
-/// Lines with | are puzzle lines, - means empty, numbers are values
+/// Puzzle rows use `.` for empty cells and optional `|` separators.
 fn parse_puzzle(content: &str) -> Vec<(usize, usize, u8)> {
     let mut entries = Vec::new();
     let mut row = 0;
 
-    for line in content.lines() {
-        let line = line.trim();
+    for raw_line in content.lines() {
+        let line = raw_line.trim();
 
-        // Skip empty lines
-        if line.is_empty() {
+        // Skip empty lines and comment lines.
+        if line.is_empty() || line.starts_with('#') {
             continue;
         }
 
-        // Skip separator lines (lines that are all dashes, spaces, and +)
-        if line.chars().all(|c| c == '-' || c == '+' || c == ' ') {
+        // Skip separator lines (for readability in test files).
+        if line.chars().all(|c| c == '=' || c == '+' || c == ' ') {
             continue;
         }
 
-        // Skip comment lines
-        if !line
-            .chars()
-            .any(|c| c.is_ascii_digit() || c == '-' || c == '|')
-        {
+        let normalized = line.replace('|', " ");
+        let tokens: Vec<&str> = normalized.split_whitespace().collect();
+
+        // Ignore malformed rows. We only parse complete 9-token puzzle rows.
+        if tokens.len() != GRID_SIDE {
             continue;
         }
 
-        // Parse the line
-        let mut col = 0;
-        for ch in line.chars() {
-            if col >= GRID_SIDE {
+        let mut row_is_valid = true;
+        for (column, token) in tokens.iter().enumerate() {
+            match *token {
+                "." => {}
+                _ => match token.parse::<u8>() {
+                    Ok(value) if (1..=9).contains(&value) => entries.push((row, column, value)),
+                    _ => {
+                        row_is_valid = false;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if row_is_valid {
+            row += 1;
+            if row >= GRID_SIDE {
                 break;
             }
-
-            match ch {
-                '1'..='9' => {
-                    let value = ch as u8 - b'0';
-                    entries.push((row, col, value));
-                    col += 1;
-                }
-                '-' | '0' => {
-                    // Empty cell
-                    col += 1;
-                }
-                _ => {
-                    // Skip spaces, separators, and comments.
-                }
-            }
-        }
-
-        // Only increment row for complete grid lines.
-        if col == GRID_SIDE {
-            row += 1;
-        }
-
-        // Stop after 9 rows
-        if row >= GRID_SIDE {
-            break;
         }
     }
 
@@ -197,17 +185,17 @@ mod tests {
 
     #[test]
     fn test_parse_puzzle() {
-        let content = r#" 8  -  - | -  -  - | -  -  -
- -  -  3 | 6  -  - | -  -  -
- -  7  - | -  9  - | 2  -  -
----------+---------+---------
- -  5  - | -  -  7 | -  -  -
- -  -  - | -  4  5 | 7  -  -
- -  -  - | 1  -  - | -  3  -
----------+---------+---------
- -  -  1 | -  -  - | -  6  8
- -  -  8 | 5  -  - | -  1  -
- -  9  - | -  -  - | 4  -  -"#;
+        let content = r#"8  .  . | .  .  . | .  .  .
+.  .  3 | 6  .  . | .  .  .
+.  7  . | .  9  . | 2  .  .
+=====================
+.  5  . | .  .  7 | .  .  .
+.  .  . | .  4  5 | 7  .  .
+.  .  . | 1  .  . | .  3  .
+=====================
+.  .  1 | .  .  . | .  6  8
+.  .  8 | 5  .  . | .  1  .
+.  9  . | .  .  . | 4  .  ."#;
 
         let entries = parse_puzzle(content);
 
@@ -253,18 +241,18 @@ mod tests {
     }
 
     #[test]
-    fn parse_puzzle_treats_zero_as_empty() {
-        let content = r#" 0  -  - | -  -  - | -  -  -
- -  -  - | -  -  - | -  -  -
- -  -  - | -  -  - | -  -  -
----------+---------+---------
- -  -  - | -  -  - | -  -  -
- -  -  - | -  -  - | -  -  -
- -  -  - | -  -  - | -  -  -
----------+---------+---------
- -  -  - | -  -  - | -  -  -
- -  -  - | -  -  - | -  -  -
- -  -  - | -  -  - | -  -  -"#;
+    fn parse_puzzle_treats_dot_as_empty() {
+        let content = r#".  .  . | .  .  . | .  .  .
+.  .  . | .  .  . | .  .  .
+.  .  . | .  .  . | .  .  .
+=====================
+.  .  . | .  .  . | .  .  .
+.  .  . | .  .  . | .  .  .
+.  .  . | .  .  . | .  .  .
+=====================
+.  .  . | .  .  . | .  .  .
+.  .  . | .  .  . | .  .  .
+.  .  . | .  .  . | .  .  ."#;
 
         let entries = parse_puzzle(content);
         assert!(entries.is_empty());
@@ -272,17 +260,17 @@ mod tests {
 
     #[test]
     fn parse_puzzle_ignores_incomplete_rows() {
-        let content = r#" 1  -  - | -  -  - | -  -  -
- -  -  - | -  -  - | -  -
- -  -  - | -  -  - | -  -  -
----------+---------+---------
- -  -  - | -  -  - | -  -  -
- -  -  - | -  -  - | -  -  -
- -  -  - | -  -  - | -  -  -
----------+---------+---------
- -  -  - | -  -  - | -  -  -
- -  -  - | -  -  - | -  -  -
- -  -  - | -  -  - | -  -  -"#;
+        let content = r#"1  .  . | .  .  . | .  .  .
+.  .  . | .  .  . | .  .
+.  .  . | .  .  . | .  .  .
+=====================
+.  .  . | .  .  . | .  .  .
+.  .  . | .  .  . | .  .  .
+.  .  . | .  .  . | .  .  .
+=====================
+.  .  . | .  .  . | .  .  .
+.  .  . | .  .  . | .  .  .
+.  .  . | .  .  . | .  .  ."#;
 
         let entries = parse_puzzle(content);
         assert_eq!(entries, vec![(0, 0, 1)]);

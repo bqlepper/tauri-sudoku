@@ -1,0 +1,5 @@
+interface:
+  display_name: "Cross Platform Hygiene Rust"
+  short_description: "Audit Rust repo hygiene and Linux/Windows portability"
+  default_prompt: "Run a full cross-platform hygiene audit for this Rust repo, fix issues, and re-run tests."
+

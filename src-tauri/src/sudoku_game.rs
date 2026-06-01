@@ -60,12 +60,13 @@ impl Game {
                     }
 
                     trial_grid.run_exact_cover_checks();
+                    trial_grid.lock_set_by_user(row, column);
                     if trial_grid.is_solved() {
                         println!("Puzzle is solved!");
                         self.grid = trial_grid;
                     } else if trial_grid.is_solvable() {
-                        trial_grid.lock_set_by_user(row, column);
                         self.grid = trial_grid;
+                        self.grid.print_remaining_solution_count_for_user_clues();
                     } else {
                         return Err(format!("Setting {} at row {} column {} leads to no possible solutions!", value, row+1, column+1));
                     }
@@ -78,7 +79,7 @@ impl Game {
 
     pub fn print_grid(&self) {
         if self.grid.is_solved() {
-            println!("\n**** Solved Puzzle (Green=Input, Yellow=Solved) ****");
+            println!("\n**** Solved Puzzle ****");
         } else {
             println!("\n**** Current Puzzle ****");
         }

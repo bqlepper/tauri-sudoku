@@ -14,8 +14,8 @@ This plan implements the first TODO in `Readme.md`.
 
 1. Work on branch `feature/exact-cover-refactor`.
 2. Enforce Linux-friendly line endings:
-   - `.gitattributes`: `* text=auto eol=lf`
-   - repo-local Git config: `core.autocrlf=false`, `core.eol=lf`, `core.safecrlf=true`
+    - `.gitattributes`: `* text=auto eol=lf`
+    - repo-local Git config: `core.autocrlf=false`, `core.eol=lf`, `core.safecrlf=true`
 
 ## Status Model (Mutually Exclusive for Solution Count)
 
@@ -37,10 +37,10 @@ Sudoku exact cover dimensions:
 
 1. Rows: `9 x 9 x 9 = 729` assignment candidates `(row, col, value)`.
 2. Columns: `9 x 9 x 4 = 324` constraints:
-   - Cell occupancy constraint
-   - Row-value uniqueness constraint
-   - Column-value uniqueness constraint
-   - Box-value uniqueness constraint
+    - Cell occupancy constraint
+    - Row-value uniqueness constraint
+    - Column-value uniqueness constraint
+    - Box-value uniqueness constraint
 
 Each assignment row sets exactly 4 columns (one in each family).
 
@@ -48,14 +48,14 @@ Each assignment row sets exactly 4 columns (one in each family).
 
 1. Add exact cover + DLX module under `src-tauri/src/sudoku_game/`.
 2. Implement mapping helpers:
-   - assignment `(r,c,v)` <-> exact-cover row index
-   - each of the 4 constraint families <-> column index
+    - assignment `(r,c,v)` <-> exact-cover row index
+    - each of the 4 constraint families <-> column index
 3. Implement DLX engine using memory-managed Rust containers (index-based vectors; no raw pointers/unsafe).
 4. Build analyzer API:
-   - apply user clues
-   - detect contradictions
-   - compute candidate validity per cell
-   - count solutions with cap and early-stop
+    - apply user clues
+    - detect contradictions
+    - compute candidate validity per cell
+    - count solutions with cap and early-stop
 5. Integrate into existing game/grid APIs without changing frontend contract.
 6. Retire old check/trial-based solver path after parity is verified.
 7. Add tests for mapping invariants, contradiction handling, and cap behavior.
@@ -78,14 +78,14 @@ Legacy solver paths expected to be replaced:
 ## Validation Plan
 
 1. Unit tests for exact-cover mapping:
-   - 729 rows, 324 columns
-   - each row covers exactly 4 constraints
+    - 729 rows, 324 columns
+    - each row covers exactly 4 constraints
 2. Unit tests for contradiction detection from conflicting clues.
 3. Unit tests for `count_solutions` with cap:
-   - `0` case -> `Contradiction`
-   - `1` case -> `Unique`
-   - `2+` but `< cap` -> `MultipleBelowCap(n)`
-   - `>= cap` -> `AtLeastCap(cap)`
+    - `0` case -> `Contradiction`
+    - `1` case -> `Unique`
+    - `2+` but `< cap` -> `MultipleBelowCap(n)`
+    - `>= cap` -> `AtLeastCap(cap)`
 4. Run current harness tests in `test/*.txt` and ensure no behavior regression.
 
 ## Phase 7 Completion Notes
@@ -93,18 +93,18 @@ Legacy solver paths expected to be replaced:
 Cleanup and test expansion work completed:
 
 1. Hardened command/API boundaries in `lib.rs`:
-   - Centralized parsing helpers for row/column/value.
-   - Added `cell_index` bounds validation for value/delete commands.
-   - Removed panic-prone `unwrap()` calls in headless input/output and mutex lock path.
+    - Centralized parsing helpers for row/column/value.
+    - Added `cell_index` bounds validation for value/delete commands.
+    - Removed panic-prone `unwrap()` calls in headless input/output and mutex lock path.
 2. Simplified data structures:
-   - Replaced manual `Cell`/`Grid` cloning with derived `Clone` (and `Copy` for `Cell`).
-   - Simplified grid initialization.
+    - Replaced manual `Cell`/`Grid` cloning with derived `Clone` (and `Copy` for `Cell`).
+    - Simplified grid initialization.
 3. Improved runtime resilience:
-   - Replaced several panic assertions in replay/delete flow with error logging + early return.
+    - Replaced several panic assertions in replay/delete flow with error logging + early return.
 4. Added tests:
-   - New `lib.rs` tests for parser and command boundary behavior.
-   - New `sudoku_grid.rs` tests for bounds checking and direct conflict detection.
-   - New parser edge-case tests in `test_harness.rs`.
+    - New `lib.rs` tests for parser and command boundary behavior.
+    - New `sudoku_grid.rs` tests for bounds checking and direct conflict detection.
+    - New parser edge-case tests in `test_harness.rs`.
 
 Pending local verification on a machine with Rust toolchain installed:
 
@@ -121,13 +121,13 @@ Pending local verification on a machine with Rust toolchain installed:
 ## Risks and Mitigations
 
 1. Incorrect mapping formulas:
-   - Mitigate with exhaustive mapping tests and assertions.
+    - Mitigate with exhaustive mapping tests and assertions.
 2. DLX cover/uncover bugs:
-   - Mitigate with invariant checks in tests and strict index validation.
+    - Mitigate with invariant checks in tests and strict index validation.
 3. UX/performance regressions:
-   - Mitigate with early-stop cap and compatibility checks with existing UI flows.
+    - Mitigate with early-stop cap and compatibility checks with existing UI flows.
 
 ## Reference Links
 
-1. https://cs.indstate.edu/~bdhome/SUDOKU.pdf
-2. https://www.stolaf.edu/people/hansonr/sudoku/exactcovermatrix.htm
+1. [Sudoku exact cover matrix Indiana State whitepaper](https://cs.indstate.edu/~bdhome/SUDOKU.pdf)
+2. [Exact cover matrix and dancing links whitepaper](https://www.stolaf.edu/people/hansonr/sudoku/exactcovermatrix.htm)

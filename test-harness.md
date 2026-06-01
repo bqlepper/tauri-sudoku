@@ -7,7 +7,7 @@ This document describes the automated test harness for the Sudoku solver.
 The test harness automatically:
 
 1. Reads Sudoku puzzle files from the `test/` directory
-2. Parses the puzzle format (supports the formatted grid with `|` and `-` separators)
+2. Parses the puzzle format (supports formatted rows with `|`, `.` blanks, and `=` separators)
 3. Inputs each value into the solver
 4. Verifies that the puzzle is solved correctly
 5. Reports pass/fail results
@@ -17,23 +17,23 @@ The test harness automatically:
 Test files should be in `.txt` format with the following structure:
 
 ```text
- 8  -  - | -  -  - | -  -  -
- -  -  3 | 6  -  - | -  -  -
- -  7  - | -  9  - | 2  -  -
----------+---------+---------
- -  5  - | -  -  7 | -  -  -
- -  -  - | -  4  5 | 7  -  -
- -  -  - | 1  -  - | -  3  -
----------+---------+---------
- -  -  1 | -  -  - | -  6  8
- -  -  8 | 5  -  - | -  1  -
- -  9  - | -  -  - | 4  -  -
+ 8  .  . | .  .  . | .  .  .
+ .  .  3 | 6  .  . | .  .  .
+ .  7  . | .  9  . | 2  .  .
+============================
+ .  5  . | .  .  7 | .  .  .
+ .  .  . | .  4  5 | 7  .  .
+ .  .  . | 1  .  . | .  3  .
+============================
+ .  .  1 | .  .  . | .  6  8
+ .  .  8 | 5  .  . | .  1  .
+ .  9  . | .  .  . | 4  .  .
 ```
 
 - Numbers (1-9) represent clues
-- Dashes (`-`) represent empty cells
-- Separator lines with dashes are ignored
-- Lines with `|` characters are parsed as puzzle rows
+- Dots (`.`) represent empty cells
+- Separator lines with `=` are ignored
+- `|` is optional and used only for readability
 - Comments can be added after the puzzle (they will be ignored)
 
 ## Running Tests
@@ -43,7 +43,7 @@ There are three ways to run the tests:
 ### 1. From Headless Mode (Interactive)
 
 ```bash
-cd src-rust-sudoku/src-tauri
+cd src-tauri
 cargo run -- --headless
 > test
 ```
@@ -53,7 +53,7 @@ This will run all tests in the `test/` directory and display results.
 ### 2. Standalone Test Runner (Recommended for CI/CD)
 
 ```bash
-cd src-rust-sudoku/src-tauri
+cd src-tauri
 cargo run --bin test_runner
 ```
 
@@ -71,7 +71,7 @@ The test runner exits with:
 ### 3. Build and Run Test Runner Binary
 
 ```bash
-cd src-rust-sudoku/src-tauri
+cd src-tauri
 cargo build --release --bin test_runner
 ./target/release/test_runner ../../test
 ```
@@ -125,7 +125,7 @@ Each test returns:
 To add a new test:
 
 1. Create a new `.txt` file in the `test/` directory
-2. Format the puzzle using the standard format (with `|` and `-` separators)
+2. Format the puzzle using the standard format (with `.` blanks and optional `|` / `=` separators)
 3. Run the test harness
 4. The new test will automatically be discovered and run
 
@@ -134,19 +134,19 @@ To add a new test:
 ### Key Components
 
 1. **`test_harness.rs`**: Core test infrastructure
-   - `parse_puzzle()`: Parses test file format into (row, col, value) tuples
-   - `run_test()`: Executes a single test file
-   - `run_all_tests()`: Runs all tests in a directory
-   - `TestResult`: Data structure for test results
+    - `parse_puzzle()`: Parses test file format into (row, col, value) tuples
+    - `run_test()`: Executes a single test file
+    - `run_all_tests()`: Runs all tests in a directory
+    - `TestResult`: Data structure for test results
 
 2. **`lib.rs`**: Integration with headless mode
-   - `run_tests()`: Command handler for "test" command
-   - Automatically finds test directory
+    - `run_tests()`: Command handler for "test" command
+    - Automatically finds test directory
 
 3. **`bin/test_runner.rs`**: Standalone test runner
-   - Can be run independently
-   - Proper exit codes for CI/CD integration
-   - Command-line argument support
+    - Can be run independently
+    - Proper exit codes for CI/CD integration
+    - Command-line argument support
 
 ### Design Decisions
 
@@ -160,7 +160,7 @@ To add a new test:
 Add to your CI/CD pipeline:
 
 ```bash
-cd src-rust-sudoku/src-tauri
+cd src-tauri
 cargo test  # Run unit tests
 cargo run --bin test_runner  # Run integration tests
 ```

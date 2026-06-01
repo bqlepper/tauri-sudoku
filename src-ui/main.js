@@ -32,8 +32,10 @@ function set_message_good(message) {
 async function user_input(keyPress) {
     // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
     let grid_json =
-        await invoke("user_change", { user_input: parseInt(keyPress),
-                                      cell_index: parseInt(selectedCell.getAttribute('data-index')) });
+        await invoke("user_change", {
+            user_input: parseInt(keyPress),
+            cell_index: parseInt(selectedCell.getAttribute('data-index'))
+        });
 
     // Parse JSON response
     let gridData;
@@ -116,10 +118,10 @@ window.addEventListener("DOMContentLoaded", () => {
             if (e.key >= '0' && e.key <= '9') {
                 set_message_ok("Processing your input.  Hang on...");
             } else if ((e.key === 'Tab') ||
-                       (e.key === 'ArrowRight') ||
-                       (e.key === 'ArrowLeft') ||
-                       (e.key === 'ArrowUp') ||
-                       (e.key === 'ArrowDown')) {
+                    (e.key === 'ArrowRight') ||
+                    (e.key === 'ArrowLeft') ||
+                    (e.key === 'ArrowUp') ||
+                    (e.key === 'ArrowDown')) {
                 let nextIndex;
                 if (e.key === 'ArrowLeft') {
                     nextIndex = (dataIndex - 1 + 81) % 81;
@@ -129,7 +131,7 @@ window.addEventListener("DOMContentLoaded", () => {
                     nextIndex = (dataIndex + 9) % 81;
                 } else if (e.key === 'ArrowUp') {
                     nextIndex = (dataIndex - 9 + 81) % 81;
-             }
+                }
                 const nextCell = document.querySelector(`.cell[data-index="${nextIndex}"]`);
                 if (nextCell) {
                     selectedCell.classList.remove('selected');
