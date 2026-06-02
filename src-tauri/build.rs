@@ -71,7 +71,7 @@ fn cleanup_generated_artifact_link() -> io::Result<()> {
 
     let metadata = fs::symlink_metadata(link_path)?;
     if metadata.file_type().is_symlink() {
-        fs::remove_dir(link_path)?;
+        fs::remove_file(link_path)?;
     }
 
     Ok(())
