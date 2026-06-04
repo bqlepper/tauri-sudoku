@@ -70,7 +70,28 @@ fn cleanup_generated_artifact_link() -> io::Result<()> {
     }
 
     let metadata = fs::symlink_metadata(link_path)?;
-    if metadata.file_type().is_symlink() {
+    if !metadata.file_type().is_symlink() {
+        return Ok(());
+    }
+
+    #[cfg(windows)]
+    {
+        // `mklink /J` creates a directory junction that must be removed as a directory.
+        // Fall back to `remove_file` for non-directory symlink types.
+        if let Err(remove_dir_error) = fs::remove_dir(link_path) {
+            fs::remove_file(link_path).map_err(|remove_file_error| {
+                io::Error::new(
+                    remove_file_error.kind(),
+                    format!(
+                        "failed to remove gen link as directory ({remove_dir_error}) or file ({remove_file_error})"
+                    ),
+                )
+            })?;
+        }
+    }
+
+    #[cfg(not(windows))]
+    {
         fs::remove_file(link_path)?;
     }
 
