@@ -1,9 +1,9 @@
 // Standalone test runner binary
 // Run with: cargo run --bin test_runner
 
-use tauri2_sudoku_lib::test_harness;
-use std::path::Path;
 use std::env;
+use std::path::Path;
+use tauri2_sudoku_lib::test_harness;
 
 fn main() {
     let args: Vec<String> = env::args().collect();

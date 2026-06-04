@@ -1,8 +1,8 @@
-use sudoku_grid::Grid;
+use sudoku_grid::{Grid, GridSnapshot};
 
 pub mod exact_cover;
-pub mod sudoku_grid;
 pub mod sudoku_constants;
+pub mod sudoku_grid;
 
 pub struct Game {
     grid: Grid, // The grid holds 9x9 grid of cells
@@ -10,28 +10,20 @@ pub struct Game {
 
 impl Game {
     pub fn new() -> Game {
-        Game {
-            grid : Grid::new(),
-        }
+        Game { grid: Grid::new() }
     }
 
-    pub(super) fn get_grid(&mut self) -> String {
+    pub(super) fn get_grid(&self) -> GridSnapshot {
         self.grid.get_grid()
     }
 
-    pub(super) fn set_debug(&mut self, on: bool)
-    {
+    pub(super) fn set_debug(&mut self, on: bool) {
         self.grid.set_debug(on);
     }
 
     // Clear the whole grid of any user selections and restart the game
     pub(super) fn clear(&mut self) {
         self.grid.clear();
-    }
-
-    // Called to start count for good solutions
-    pub(super) fn count_solutions(&mut self) -> Result<usize, usize> {
-        self.grid.count_solutions()
     }
 
     // Clear a value that a user has previously set
@@ -56,7 +48,11 @@ impl Game {
             Ok(changed) => {
                 if changed {
                     if trial_grid.has_direct_conflict(row, column, value) {
-                        return Err(format!("{value} is not valid for row {} column {}!", row+1, column+1));
+                        return Err(format!(
+                            "{value} is not valid for row {} column {}!",
+                            row + 1,
+                            column + 1
+                        ));
                     }
 
                     trial_grid.run_exact_cover_checks();
@@ -66,12 +62,16 @@ impl Game {
                         self.grid = trial_grid;
                     } else if trial_grid.is_solvable() {
                         self.grid = trial_grid;
-                        self.grid.print_remaining_solution_count_for_user_clues();
                     } else {
-                        return Err(format!("Setting {} at row {} column {} leads to no possible solutions!", value, row+1, column+1));
+                        return Err(format!(
+                            "Setting {} at row {} column {} leads to no possible solutions!",
+                            value,
+                            row + 1,
+                            column + 1
+                        ));
                     }
                 }
-            },
+            }
         }
 
         Ok(())
@@ -84,6 +84,7 @@ impl Game {
             println!("\n**** Current Puzzle ****");
         }
         self.grid.print_grid();
+        println!("{}", self.grid.remaining_solution_summary().text);
         if self.grid.is_solved() {
             println!("\nSOLVED!!!!!");
         }

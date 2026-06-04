@@ -1,13 +1,39 @@
-use colored::*;
-use sudoku_cell::Cell;
 use super::exact_cover::{Assignment, ExactCoverAnalyzer, ExactCoverError};
 use super::sudoku_constants::{BOX_SIDE as SUDOKU_BOX_SIDE, GRID_SIDE, VALUE_MAX};
+use colored::*;
+use serde::Serialize;
+use sudoku_cell::Cell;
 
 pub mod sudoku_cell;
 pub mod sudoku_grid_trials;
 
 pub(super) const GRID_SIZE: usize = GRID_SIDE;
 pub(super) const BOX_SIDE: usize = SUDOKU_BOX_SIDE;
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct GridCellSnapshot {
+    pub(crate) value: i32,
+    pub(crate) is_user_set: bool,
+    pub(crate) is_solved: bool,
+    pub(crate) is_error: bool,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct RemainingSolutionsSummary {
+    pub(crate) count: Option<usize>,
+    pub(crate) at_least_cap: bool,
+    pub(crate) text: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct GridSnapshot {
+    pub(crate) cells: Vec<GridCellSnapshot>,
+    pub(crate) is_solved: bool,
+    pub(crate) remaining_solutions: RemainingSolutionsSummary,
+}
 
 // Grid has all the sudoku rule checking functions and prints out the grid to the command line
 #[derive(Clone)]
@@ -26,25 +52,31 @@ impl Grid {
 
     // Clears out all cells.
     pub(super) fn clear(&mut self) {
-        self.grid.iter_mut().flat_map(|row| row.iter_mut()).for_each(|cell| {
-            cell.clear();
-        });
+        self.grid
+            .iter_mut()
+            .flat_map(|row| row.iter_mut())
+            .for_each(|cell| {
+                cell.clear();
+            });
     }
 
     // returns true if every cell is solved, false otherwise.
     pub(super) fn is_solved(&self) -> bool {
-        self.grid.iter().flat_map(|row| row.iter()).all(|cell| {
-            cell.is_solved()
-        })
+        self.grid
+            .iter()
+            .flat_map(|row| row.iter())
+            .all(|cell| cell.is_solved())
     }
 
-    pub(super) fn set_debug(&mut self, on: bool) { self.debug_output = on; }
+    pub(super) fn set_debug(&mut self, on: bool) {
+        self.debug_output = on;
+    }
 
-    pub(super) fn lock_set_by_user(&mut self, row: usize, column:usize) { self.grid[row][column].lock_set_by_user(); }
+    pub(super) fn lock_set_by_user(&mut self, row: usize, column: usize) {
+        self.grid[row][column].lock_set_by_user();
+    }
 
-    // Get the grid as a JSON string
-    pub(super) fn get_grid(&self) -> String {
-        use serde_json::json;
+    pub(super) fn get_grid(&self) -> GridSnapshot {
         let mut cells = Vec::new();
         for row in 0..GRID_SIZE {
             for column in 0..GRID_SIZE {
@@ -55,21 +87,20 @@ impl Grid {
                     Ok(v) => v as i32,
                 };
 
-                cells.push(json!({
-                    "value": value,
-                    "isUserSet": is_user_set,
-                    "isSolved": !is_user_set && value > 0,
-                    "isError": value == -1
-                }));
+                cells.push(GridCellSnapshot {
+                    value,
+                    is_user_set,
+                    is_solved: !is_user_set && value > 0,
+                    is_error: value == -1,
+                });
             }
         }
 
-        let grid_data = json!({
-            "cells": cells,
-            "isSolved": self.is_solved()
-        });
-
-        grid_data.to_string()
+        GridSnapshot {
+            cells,
+            is_solved: self.is_solved(),
+            remaining_solutions: self.remaining_solution_summary(),
+        }
     }
 
     pub(super) fn apply_exact_cover_checks(&mut self) -> Result<(), String> {
@@ -173,19 +204,21 @@ impl Grid {
 
         // Don't let the user delete a value that they have not already set
         if self.grid[row][column].is_set_by_user() {
-            self.grid[row][column].clear();  //Clear the cells user settings
+            self.grid[row][column].clear(); //Clear the cells user settings
             let replay_user_settings = self.get_user_settings()?; // Save all the other user settings
             self.clear(); // Clear the whole grid
-            for user_setting in replay_user_settings { // Replay all the other user settings
-                self.set_value(user_setting.0, user_setting.1, user_setting.2).map_err(|error| {
-                    format!(
-                        "Unexpected error resetting row {} column {} value {}: {}",
-                        user_setting.0 + 1,
-                        user_setting.1 + 1,
-                        user_setting.2,
-                        error
-                    )
-                })?;
+            for user_setting in replay_user_settings {
+                // Replay all the other user settings
+                self.set_value(user_setting.0, user_setting.1, user_setting.2)
+                    .map_err(|error| {
+                        format!(
+                            "Unexpected error resetting row {} column {} value {}: {}",
+                            user_setting.0 + 1,
+                            user_setting.1 + 1,
+                            user_setting.2,
+                            error
+                        )
+                    })?;
                 self.grid[user_setting.0][user_setting.1].lock_set_by_user();
             }
 
@@ -198,19 +231,30 @@ impl Grid {
     }
 
     // Returns false if this value was already set, otherwise returns true to indicate a change
-    pub(super) fn set_value(&mut self, row: usize, column: usize, value: u8) -> Result<bool, String> {
+    pub(super) fn set_value(
+        &mut self,
+        row: usize,
+        column: usize,
+        value: u8,
+    ) -> Result<bool, String> {
         if row >= GRID_SIZE {
-            return Err(format!("Invalid row {}", row+1));
+            return Err(format!("Invalid row {}", row + 1));
         }
         if column >= GRID_SIZE {
-            return Err(format!("Invalid column {}", column+1));
+            return Err(format!("Invalid column {}", column + 1));
         }
         if value == 0 || value > VALUE_MAX {
             return Err(format!("Invalid value {value}"));
         }
 
         match self.grid[row][column].set_value(value) {
-            Err(()) => return Err(format!("{value} is not a valid entry for row {} column {}", row+1, column+1)),
+            Err(()) => {
+                return Err(format!(
+                    "{value} is not a valid entry for row {} column {}",
+                    row + 1,
+                    column + 1
+                ))
+            }
             Ok(changed) => return Ok(changed),
         }
     }
@@ -220,15 +264,13 @@ impl Grid {
         println!();
         if self.debug_output {
             for (row, row_arr) in self.grid.iter().enumerate() {
-                if row != 0 && row%BOX_SIDE == 0
-                {
+                if row != 0 && row % BOX_SIDE == 0 {
                     println!("{}", "============+===========+===========".bright_cyan());
                 }
 
                 for row_index in 0..BOX_SIDE {
                     for (column, val) in row_arr.iter().enumerate() {
-                        if column != 0 && column%BOX_SIDE == 0
-                        {
+                        if column != 0 && column % BOX_SIDE == 0 {
                             print!("{}", "|".bright_cyan());
                         } else {
                             print!(" ");
@@ -239,51 +281,105 @@ impl Grid {
                             Ok(value) => {
                                 if self.grid[row][column].is_set_by_user() {
                                     if row_index == 0 {
-                                        if value == 1 { chars[0] = '1' };
-                                        if value == 2 { chars[1] = '2' };
-                                        if value == 3 { chars[2] = '3' };
+                                        if value == 1 {
+                                            chars[0] = '1'
+                                        };
+                                        if value == 2 {
+                                            chars[1] = '2'
+                                        };
+                                        if value == 3 {
+                                            chars[2] = '3'
+                                        };
                                     } else if row_index == 1 {
-                                        if value == 4 { chars[0] = '4' };
-                                        if value == 5 { chars[1] = '5' };
-                                        if value == 6 { chars[2] = '6' };
+                                        if value == 4 {
+                                            chars[0] = '4'
+                                        };
+                                        if value == 5 {
+                                            chars[1] = '5'
+                                        };
+                                        if value == 6 {
+                                            chars[2] = '6'
+                                        };
                                     } else if row_index == 2 {
-                                        if value == 7 { chars[0] = '7' };
-                                        if value == 8 { chars[1] = '8' };
-                                        if value == 9 { chars[2] = '9' };
+                                        if value == 7 {
+                                            chars[0] = '7'
+                                        };
+                                        if value == 8 {
+                                            chars[1] = '8'
+                                        };
+                                        if value == 9 {
+                                            chars[2] = '9'
+                                        };
                                     }
                                 } else if value == 0 {
                                     chars[0] = '.';
                                     chars[1] = '.';
                                     chars[2] = '.';
                                     if row_index == 0 {
-                                        if self.grid[row][column].is_value_valid(1) { chars[0] = '1' };
-                                        if self.grid[row][column].is_value_valid(2) { chars[1] = '2' };
-                                        if self.grid[row][column].is_value_valid(3) { chars[2] = '3' };
+                                        if self.grid[row][column].is_value_valid(1) {
+                                            chars[0] = '1'
+                                        };
+                                        if self.grid[row][column].is_value_valid(2) {
+                                            chars[1] = '2'
+                                        };
+                                        if self.grid[row][column].is_value_valid(3) {
+                                            chars[2] = '3'
+                                        };
                                     } else if row_index == 1 {
-                                        if self.grid[row][column].is_value_valid(4) { chars[0] = '4' };
-                                        if self.grid[row][column].is_value_valid(5) { chars[1] = '5' };
-                                        if self.grid[row][column].is_value_valid(6) { chars[2] = '6' };
+                                        if self.grid[row][column].is_value_valid(4) {
+                                            chars[0] = '4'
+                                        };
+                                        if self.grid[row][column].is_value_valid(5) {
+                                            chars[1] = '5'
+                                        };
+                                        if self.grid[row][column].is_value_valid(6) {
+                                            chars[2] = '6'
+                                        };
                                     } else if row_index == 2 {
-                                        if self.grid[row][column].is_value_valid(7) { chars[0] = '7' };
-                                        if self.grid[row][column].is_value_valid(8) { chars[1] = '8' };
-                                        if self.grid[row][column].is_value_valid(9) { chars[2] = '9' };
+                                        if self.grid[row][column].is_value_valid(7) {
+                                            chars[0] = '7'
+                                        };
+                                        if self.grid[row][column].is_value_valid(8) {
+                                            chars[1] = '8'
+                                        };
+                                        if self.grid[row][column].is_value_valid(9) {
+                                            chars[2] = '9'
+                                        };
                                     }
                                 } else {
                                     if row_index == 0 {
-                                        if value == 1 { chars[0] = '1' };
-                                        if value == 2 { chars[1] = '2' };
-                                        if value == 3 { chars[2] = '3' };
+                                        if value == 1 {
+                                            chars[0] = '1'
+                                        };
+                                        if value == 2 {
+                                            chars[1] = '2'
+                                        };
+                                        if value == 3 {
+                                            chars[2] = '3'
+                                        };
                                     } else if row_index == 1 {
-                                        if value == 4 { chars[0] = '4' };
-                                        if value == 5 { chars[1] = '5' };
-                                        if value == 6 { chars[2] = '6' };
+                                        if value == 4 {
+                                            chars[0] = '4'
+                                        };
+                                        if value == 5 {
+                                            chars[1] = '5'
+                                        };
+                                        if value == 6 {
+                                            chars[2] = '6'
+                                        };
                                     } else if row_index == 2 {
-                                        if value == 7 { chars[0] = '7' };
-                                        if value == 8 { chars[1] = '8' };
-                                        if value == 9 { chars[2] = '9' };
+                                        if value == 7 {
+                                            chars[0] = '7'
+                                        };
+                                        if value == 8 {
+                                            chars[1] = '8'
+                                        };
+                                        if value == 9 {
+                                            chars[2] = '9'
+                                        };
                                     }
                                 }
-                            },
+                            }
                         }
                         let print_string: String = chars.into_iter().collect();
                         print!("{}", print_string.bright_yellow());
@@ -296,14 +392,12 @@ impl Grid {
             }
         } else {
             for (row, row_arr) in self.grid.iter().enumerate() {
-                if row != 0 && row%BOX_SIDE == 0
-                {
+                if row != 0 && row % BOX_SIDE == 0 {
                     println!("{}", "=========+=========+=========".bright_cyan());
                 }
 
                 for (column, val) in row_arr.iter().enumerate() {
-                    if column != 0 && column%BOX_SIDE == 0
-                    {
+                    if column != 0 && column % BOX_SIDE == 0 {
                         print!("{} ", "|".bright_cyan());
                     } else {
                         print!(" ");
@@ -318,7 +412,7 @@ impl Grid {
                             } else {
                                 print!("{} ", value.to_string().bright_yellow());
                             }
-                        },
+                        }
                     }
                 }
                 println!();
@@ -330,9 +424,10 @@ impl Grid {
     // Private utility functions
     // returns true if every cell is valid, false otherwise.
     fn is_valid(&self) -> bool {
-        self.grid.iter().flat_map(|row| row.iter()).all(|cell| {
-            cell.is_valid()
-        })
+        self.grid
+            .iter()
+            .flat_map(|row| row.iter())
+            .all(|cell| cell.is_valid())
     }
 
     // Get all the user settings
@@ -395,8 +490,8 @@ impl Grid {
                     )
                 })?;
 
-                let clue = Assignment::new(row, column, value)
-                    .map_err(Self::exact_cover_error_message)?;
+                let clue =
+                    Assignment::new(row, column, value).map_err(Self::exact_cover_error_message)?;
                 clues.push(clue);
             }
         }
@@ -427,13 +522,19 @@ mod tests {
     #[test]
     fn set_value_validates_row_column_and_value_bounds() {
         let mut grid = Grid::new();
-        assert_eq!(grid.set_value(GRID_SIZE, 0, 1), Err("Invalid row 10".to_string()));
+        assert_eq!(
+            grid.set_value(GRID_SIZE, 0, 1),
+            Err("Invalid row 10".to_string())
+        );
         assert_eq!(
             grid.set_value(0, GRID_SIZE, 1),
             Err("Invalid column 10".to_string())
         );
         assert_eq!(grid.set_value(0, 0, 0), Err("Invalid value 0".to_string()));
-        assert_eq!(grid.set_value(0, 0, 10), Err("Invalid value 10".to_string()));
+        assert_eq!(
+            grid.set_value(0, 0, 10),
+            Err("Invalid value 10".to_string())
+        );
     }
 
     #[test]

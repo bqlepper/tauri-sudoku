@@ -1,12 +1,9 @@
 const { invoke } = window.__TAURI__.core;
 
 let gameMessageElement;
+let solutionCountElement;
+let gridElement;
 let selectedCell = null;
-
-const clear_input = '10';
-const solve_input = '11';
-const debug_on = '12';
-const debug_off = '13';
 
 function set_message_ok(message) {
     gameMessageElement.textContent = message;
@@ -29,24 +26,11 @@ function set_message_good(message) {
     gameMessageElement.classList.remove("message-ok");
 }
 
-async function user_input(keyPress) {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    let grid_json =
-        await invoke("user_change", {
-            user_input: parseInt(keyPress),
-            cell_index: parseInt(selectedCell.getAttribute('data-index'))
-        });
+function set_solution_count(text) {
+    solutionCountElement.textContent = text;
+}
 
-    // Parse JSON response
-    let gridData;
-    try {
-        gridData = JSON.parse(grid_json);
-    } catch (e) {
-        // If JSON parse fails, it's an error message
-        set_message_bad(grid_json);
-        return;
-    }
-
+function render_grid(gridData) {
     let error_found = false;
 
     // Update all cells from JSON data
@@ -73,6 +57,8 @@ async function user_input(keyPress) {
         }
     }
 
+    set_solution_count(gridData.remainingSolutions.text);
+
     // Update message based on grid state
     if (error_found) {
         set_message_bad("Oops!  Something is wrong");
@@ -83,25 +69,36 @@ async function user_input(keyPress) {
     }
 }
 
+function selected_cell_index() {
+    return parseInt(selectedCell.getAttribute('data-index'), 10);
+}
+
+async function user_action(request) {
+    try {
+        const gridData = await invoke("user_change", { request });
+        render_grid(gridData);
+    } catch (error) {
+        const error_message = typeof error === "string" ? error : JSON.stringify(error);
+        set_message_bad(error_message);
+    }
+}
+
 window.addEventListener("DOMContentLoaded", () => {
     gameMessageElement = document.querySelector("#game-message");
+    solutionCountElement = document.querySelector("#solution-count");
+    gridElement = document.querySelector("#sudokuGrid");
     const clearButton = document.querySelector("#clear-button");
-    const searchButton = document.querySelector("#search-button");
 
     selectedCell = document.querySelector(`.cell[data-index="0"]`);
     selectedCell.classList.add('selected');
 
     clearButton.addEventListener("click", () => {
-        user_input(clear_input);
-    });
-
-    searchButton.addEventListener("click", () => {
-        set_message_ok("Searching for a solution.  Hang on...");
-        user_input(solve_input);
+        set_message_ok("Clearing the puzzle. Hang on...");
+        user_action({ action: "clear_grid" });
     });
 
     // Add click event listener to highlight the selected cell
-    grid.addEventListener('click', (e) => {
+    gridElement.addEventListener('click', (e) => {
         if (e.target.classList.contains('cell')) {
             if (selectedCell) {
                 selectedCell.classList.remove('selected');
@@ -113,9 +110,9 @@ window.addEventListener("DOMContentLoaded", () => {
 
     // Add keyboard event listener to set values in the selected cell
     document.addEventListener('keydown', (e) => {
-        const dataIndex = parseInt(selectedCell.getAttribute('data-index'));
+        const dataIndex = parseInt(selectedCell.getAttribute('data-index'), 10);
         if (selectedCell) {
-            if (e.key >= '0' && e.key <= '9') {
+            if ((e.key >= '1' && e.key <= '9') || e.key === 'Backspace' || e.key === 'Delete') {
                 set_message_ok("Processing your input.  Hang on...");
             } else if ((e.key === 'Tab') ||
                     (e.key === 'ArrowRight') ||
@@ -134,6 +131,7 @@ window.addEventListener("DOMContentLoaded", () => {
                 }
                 const nextCell = document.querySelector(`.cell[data-index="${nextIndex}"]`);
                 if (nextCell) {
+                    e.preventDefault();
                     selectedCell.classList.remove('selected');
                     selectedCell = nextCell;
                     selectedCell.classList.add('selected');
@@ -145,19 +143,26 @@ window.addEventListener("DOMContentLoaded", () => {
     // Add keyboard event listener to set values in the selected cell
     document.addEventListener('keyup', (e) => {
         if (selectedCell) {
-            if (e.key >= '0' && e.key <= '9') {
-                user_input(e.key);
+            if (e.key >= '1' && e.key <= '9') {
+                user_action({
+                    action: "set_cell",
+                    cell_index: selected_cell_index(),
+                    value: parseInt(e.key, 10),
+                });
             } else if (e.key === 'Backspace' || e.key === 'Delete') {
-                user_input('0');
+                user_action({
+                    action: "clear_cell",
+                    cell_index: selected_cell_index(),
+                });
             } else if (e.key === 'C' || e.key === 'c') {
-                user_input(clear_input);
-            } else if (e.key === 'S' || e.key === 's') {
-                user_input(solve_input);
+                user_action({ action: "clear_grid" });
             } else if (e.key === 'D' || e.key === 'd') {
-                user_input(debug_on);
+                user_action({ action: "set_debug", enabled: true });
             } else if (e.key === 'O' || e.key === 'o') {
-                user_input(debug_off);
+                user_action({ action: "set_debug", enabled: false });
             }
         }
     });
+
+    user_action({ action: "get_grid" });
 });

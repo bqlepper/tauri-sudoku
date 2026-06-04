@@ -1,16 +1,27 @@
-use std::env;
+use serde::Deserialize;
 use std::io::{self, Write};
 use std::sync::Mutex;
 use tauri::State;
 
-use crate::sudoku_game::Game;
 use crate::sudoku_game::sudoku_constants::{GRID_SIDE, VALUE_MAX, VALUE_MIN};
+use crate::sudoku_game::sudoku_grid::GridSnapshot;
+use crate::sudoku_game::Game;
 
 pub mod sudoku_game;
 pub mod test_harness;
 struct GameState(Mutex<Game>);
 
 const CELL_COUNT: usize = GRID_SIDE * GRID_SIDE;
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "action", rename_all = "snake_case")]
+enum UserChangeRequest {
+    SetCell { cell_index: usize, value: u8 },
+    ClearCell { cell_index: usize },
+    ClearGrid,
+    SetDebug { enabled: bool },
+    GetGrid,
+}
 
 // Public API
 // New headless mode function
@@ -122,18 +133,6 @@ pub fn run_headless() {
                 game.clear();
                 game.print_grid();
             }
-            "count" => match game.count_solutions() {
-                Ok(count) => {
-                    println!("Solutions remaining: {}", count);
-                }
-                Err(count) => {
-                    if count == 0 {
-                        println!("No solutions remaining");
-                    } else {
-                        println!("At least {} solutions remaining", count);
-                    }
-                }
-            },
             "debug" => {
                 if parts.len() != 2 {
                     println!("Usage: debug on|off");
@@ -179,23 +178,20 @@ pub fn run() {
 }
 
 // Private utility functions
-// For this user_change function, the cell_index is in the 0-80 range and user_input is in the 0-13 range.
-//The user_input values must match up with values defined in src-ui/main.js:
-//  0-9: Set the cell to that value (0 is used to clear a cell)
-//  10: Clear the whole grid
-//  11: Count the number of solutions remaining for the current grid and return that count to the caller. If there are 50 or more solutions remaining, return "At least 50 solutions remaining" instead of the exact count.
-//  12: Turn on debug mode which prints out the grid with all the possible values for each cell and the number of solutions remaining for each cell.
-//  13: Turn off debug mode and return to normal grid display.
+// For this user_change function, all user actions are sent as typed JSON request payloads.
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command(rename_all = "snake_case")]
-fn user_change(state: State<'_, GameState>, cell_index: usize, user_input: u8) -> String {
+fn user_change(
+    state: State<'_, GameState>,
+    request: UserChangeRequest,
+) -> Result<GridSnapshot, String> {
     // Lock the mutex to get mutable access to the Game
     let mut game = match state.0.lock() {
         Ok(game) => game,
-        Err(_) => return "Bad input: Internal game state lock failed".to_string(),
+        Err(_) => return Err("Bad input: Internal game state lock failed".to_string()),
     };
-    run_user_change(&mut game, cell_index, user_input)
+    run_user_change(&mut game, request)
 }
 
 // Helper function to print available commands
@@ -204,7 +200,6 @@ fn print_help() {
     println!("  s <row> <col> <value>  - Set a value (row/col: 1-9, value: 1-9)");
     println!("  d <row> <col>          - Delete a value (row/col: 1-9)");
     println!("  c                      - Clear the entire grid");
-    println!("  count                  - Count remaining solutions");
     println!("  debug on               - Turn on debug mode");
     println!("  debug off              - Turn off debug mode");
     println!("  test                   - Run all tests from test directory");
@@ -218,9 +213,9 @@ fn run_tests() {
 
     // Try to find the test directory
     let test_paths = [
-        "../../test",           // From cargo run location
-        "../test",              // Alternative
-        "test",                 // If running from project root
+        "../../test", // From cargo run location
+        "../test",    // Alternative
+        "test",       // If running from project root
     ];
 
     let test_dir = test_paths
@@ -260,60 +255,44 @@ fn run_tests() {
     }
 }
 
-fn run_user_change(game: &mut Game, cell_index: usize, user_input: u8) -> String {
-    if matches!(user_input, 0 | VALUE_MIN..=VALUE_MAX) {
-        let (row, column) = match cell_position_from_index(cell_index) {
-            Ok(position) => position,
-            Err(message) => return format!("Bad input: {message}"),
-        };
-
-        if user_input == 0 {
-            match game.user_delete_value(row, column) {
-                Ok(_) => {
-                    game.print_grid();
-                    return game.get_grid();
-                }
-                Err(user_msg) => {
-                    println!("Bad input: {user_msg}");
-                    return format!("Bad input: {user_msg}");
-                }
+fn run_user_change(game: &mut Game, request: UserChangeRequest) -> Result<GridSnapshot, String> {
+    match request {
+        UserChangeRequest::SetCell { cell_index, value } => {
+            if !(VALUE_MIN..=VALUE_MAX).contains(&value) {
+                return Err(format!(
+                    "Bad input: Value must be {}-{}",
+                    VALUE_MIN, VALUE_MAX
+                ));
             }
+
+            let (row, column) = cell_position_from_index(cell_index)
+                .map_err(|message| format!("Bad input: {message}"))?;
+
+            game.user_set_value(row, column, value)
+                .map_err(|user_msg| format!("Bad input: {user_msg}"))?;
+            game.print_grid();
+            Ok(game.get_grid())
         }
+        UserChangeRequest::ClearCell { cell_index } => {
+            let (row, column) = cell_position_from_index(cell_index)
+                .map_err(|message| format!("Bad input: {message}"))?;
 
-        match game.user_set_value(row, column, user_input) {
-            Ok(_) => {
-                game.print_grid();
-                return game.get_grid();
-            }
-            Err(user_msg) => {
-                println!("Bad input: {user_msg}");
-                return format!("Bad input: {user_msg}");
-            }
+            game.user_delete_value(row, column)
+                .map_err(|user_msg| format!("Bad input: {user_msg}"))?;
+            game.print_grid();
+            Ok(game.get_grid())
         }
-    }
-
-    match user_input {
-        10 => {
+        UserChangeRequest::ClearGrid => {
             game.clear();
             game.print_grid();
-            game.get_grid()
+            Ok(game.get_grid())
         }
-        11 => match game.count_solutions() {
-            Ok(count) => format!("Solutions remaining: {}", count),
-            Err(count) if count == 0 => "No solutions remaining".to_string(),
-            Err(count) => format!("At least {} solutions remaining", count),
-        },
-        12 => {
-            game.set_debug(true);
+        UserChangeRequest::SetDebug { enabled } => {
+            game.set_debug(enabled);
             game.print_grid();
-            game.get_grid()
+            Ok(game.get_grid())
         }
-        13 => {
-            game.set_debug(false);
-            game.print_grid();
-            game.get_grid()
-        }
-        _ => format!("Bad input: Invalid command {}", user_input),
+        UserChangeRequest::GetGrid => Ok(game.get_grid()),
     }
 }
 
@@ -348,7 +327,10 @@ mod tests {
 
     #[test]
     fn parse_one_based_rejects_out_of_range_values() {
-        assert_eq!(parse_one_based("0", "Row"), Err("Row must be 1-9".to_string()));
+        assert_eq!(
+            parse_one_based("0", "Row"),
+            Err("Row must be 1-9".to_string())
+        );
         assert_eq!(
             parse_one_based("10", "Column"),
             Err("Column must be 1-9".to_string())
@@ -372,22 +354,48 @@ mod tests {
     #[test]
     fn run_user_change_rejects_invalid_cell_index_for_value_actions() {
         let mut game = Game::new();
-        let error = run_user_change(&mut game, 81, 1);
-        assert_eq!(error, "Bad input: Invalid cell index 81 (expected 0-80)");
+        let error = run_user_change(
+            &mut game,
+            UserChangeRequest::SetCell {
+                cell_index: 81,
+                value: 1,
+            },
+        );
+        assert_eq!(
+            error,
+            Err("Bad input: Invalid cell index 81 (expected 0-80)".to_string())
+        );
 
-        let delete_error = run_user_change(&mut game, 100, 0);
+        let delete_error =
+            run_user_change(&mut game, UserChangeRequest::ClearCell { cell_index: 100 });
         assert_eq!(
             delete_error,
-            "Bad input: Invalid cell index 100 (expected 0-80)"
+            Err("Bad input: Invalid cell index 100 (expected 0-80)".to_string())
         );
     }
 
     #[test]
-    fn run_user_change_rejects_unknown_command_values() {
+    fn run_user_change_rejects_out_of_range_set_values() {
         let mut game = Game::new();
         assert_eq!(
-            run_user_change(&mut game, 0, 99),
-            "Bad input: Invalid command 99"
+            run_user_change(
+                &mut game,
+                UserChangeRequest::SetCell {
+                    cell_index: 0,
+                    value: 0
+                }
+            ),
+            Err("Bad input: Value must be 1-9".to_string())
+        );
+        assert_eq!(
+            run_user_change(
+                &mut game,
+                UserChangeRequest::SetCell {
+                    cell_index: 0,
+                    value: 10
+                }
+            ),
+            Err("Bad input: Value must be 1-9".to_string())
         );
     }
 }

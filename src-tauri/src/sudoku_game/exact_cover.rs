@@ -10,8 +10,7 @@ const CONSTRAINT_COLUMNS_PER_FAMILY: usize = GRID_SIDE * GRID_SIDE;
 #[cfg(test)]
 const CELL_COUNT: usize = GRID_SIDE * GRID_SIDE;
 const CELL_CONSTRAINT_OFFSET: usize = 0;
-const ROW_VALUE_CONSTRAINT_OFFSET: usize =
-    CELL_CONSTRAINT_OFFSET + CONSTRAINT_COLUMNS_PER_FAMILY;
+const ROW_VALUE_CONSTRAINT_OFFSET: usize = CELL_CONSTRAINT_OFFSET + CONSTRAINT_COLUMNS_PER_FAMILY;
 const COLUMN_VALUE_CONSTRAINT_OFFSET: usize =
     ROW_VALUE_CONSTRAINT_OFFSET + CONSTRAINT_COLUMNS_PER_FAMILY;
 const BOX_VALUE_CONSTRAINT_OFFSET: usize =
@@ -108,11 +107,7 @@ impl ExactCoverAnalyzer {
         Ok(count > 0)
     }
 
-    fn candidate_mask_for_cell(
-        &self,
-        row: usize,
-        column: usize,
-    ) -> Result<u16, ExactCoverError> {
+    fn candidate_mask_for_cell(&self, row: usize, column: usize) -> Result<u16, ExactCoverError> {
         validate_row(row)?;
         validate_column(column)?;
 
@@ -255,10 +250,7 @@ impl ExactCoverAnalyzer {
     }
 
     #[cfg(test)]
-    fn solution_count_status(
-        &self,
-        cap: usize,
-    ) -> Result<SolutionCountStatus, ExactCoverError> {
+    fn solution_count_status(&self, cap: usize) -> Result<SolutionCountStatus, ExactCoverError> {
         let count = self.count_solutions_with_cap(cap)?;
         classify_solution_count(count, cap)
     }
@@ -283,9 +275,7 @@ fn row_index_to_assignment(row_index: usize) -> Result<Assignment, ExactCoverErr
     Assignment::new(row, column, value)
 }
 
-fn assignment_to_constraint_columns(
-    assignment: Assignment,
-) -> [usize; CONSTRAINTS_PER_ASSIGNMENT] {
+fn assignment_to_constraint_columns(assignment: Assignment) -> [usize; CONSTRAINTS_PER_ASSIGNMENT] {
     let cell = cell_constraint_column_formula(assignment.row, assignment.column);
     let row_value = row_value_constraint_column_formula(assignment.row, assignment.value);
     let column_value = column_value_constraint_column_formula(assignment.column, assignment.value);

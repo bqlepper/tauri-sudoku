@@ -25,7 +25,7 @@ Use `rustup`, Rust's official installer which installs `rustc` the rust compiler
 - Configure your cargo environment: `source $HOME/.cargo/env`
 - Check `rustc --version` and `cargo --version`
 
-#### Installing Cargo and Rust on Windows or other Linux distros
+#### Installing Cargo and Rust on Windows
 
 - In powershell issue this command `winget install Rustlang.Rustup`
 

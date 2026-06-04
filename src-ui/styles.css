@@ -95,6 +95,10 @@ button {
     button:active {
         background-color: #0f0f0f69;
     }
+
+    .solution-count {
+        color: #f6f6f6;
+    }
 }
 
 /* Sudoku grid styling */
@@ -167,3 +171,8 @@ button {
     color: red;
 }
 
+.solution-count {
+    color: #333;
+    font-weight: 600;
+    margin: 0;
+}

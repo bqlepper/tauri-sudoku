@@ -3,7 +3,6 @@ use super::Grid;
 const MAX_SOLUTION_COUNT: usize = 50;
 const ALL_VALUES_MASK: u16 = 0x1ff;
 const START_EXTRA_CHECKS: usize = 10;
-const START_SOLUTION_COUNT: usize = 16;
 
 impl Grid {
     pub(crate) fn run_exact_cover_checks(&mut self) {
@@ -107,13 +106,15 @@ impl Grid {
                 {
                     continue;
                 }
-                let value = self.grid[check_row][check_column].get_value().map_err(|_| {
-                    format!(
-                        "Unexpected solved-cell error at row {} column {}",
-                        check_row + 1,
-                        check_column + 1
-                    )
-                })?;
+                let value = self.grid[check_row][check_column]
+                    .get_value()
+                    .map_err(|_| {
+                        format!(
+                            "Unexpected solved-cell error at row {} column {}",
+                            check_row + 1,
+                            check_column + 1
+                        )
+                    })?;
                 mask &= !value_to_bit(value);
             }
         }
@@ -133,46 +134,23 @@ impl Grid {
         }
     }
 
-    // Counts solutions with a cap of 50 to preserve current command/UI contract.
-    pub(crate) fn count_solutions(&self) -> Result<usize, usize> {
-        if self.is_solved() {
-            println!("Already solved");
-            self.print_grid();
-            return Err(1);
-        }
-
-        let solution_count = match self.count_exact_cover_solutions_with_cap(MAX_SOLUTION_COUNT) {
-            Ok(count) => count,
-            Err(_) => return Err(0),
-        };
-
-        println!("Found {} solutions", solution_count);
-        if solution_count >= MAX_SOLUTION_COUNT {
-            return Err(MAX_SOLUTION_COUNT);
-        } else if solution_count == 0 {
-            return Err(0);
-        }
-        Ok(solution_count)
-    }
-
-    pub(crate) fn print_remaining_solution_count_for_user_clues(&self) {
-        let solution_count = self.solved_count();
-        if solution_count < START_SOLUTION_COUNT {
-            return;
-        }
-
-        match self.remaining_solution_count_for_user_clues() {
-            Some(Ok(count)) => {
-                if count >= MAX_SOLUTION_COUNT {
-                    println!("There are at least {} solutions remaining", count);
-                } else {
-                    println!("There are exactly {} remaining solutions", count);
-                }
-            }
-            Some(Err(error)) => {
-                println!("Unable to count remaining solutions: {}", error);
-            }
-            None => {}
+    pub(crate) fn remaining_solution_summary(&self) -> super::RemainingSolutionsSummary {
+        match self.count_exact_cover_solutions_with_cap(MAX_SOLUTION_COUNT) {
+            Ok(count) if count >= MAX_SOLUTION_COUNT => super::RemainingSolutionsSummary {
+                count: Some(MAX_SOLUTION_COUNT),
+                at_least_cap: true,
+                text: format!("Remaining solutions: at least {}", MAX_SOLUTION_COUNT),
+            },
+            Ok(count) => super::RemainingSolutionsSummary {
+                count: Some(count),
+                at_least_cap: false,
+                text: format!("Remaining solutions: {}", count),
+            },
+            Err(error) => super::RemainingSolutionsSummary {
+                count: None,
+                at_least_cap: false,
+                text: format!("Remaining solutions: unavailable ({})", error),
+            },
         }
     }
 
@@ -196,14 +174,6 @@ impl Grid {
         }
         false
     }
-
-    fn remaining_solution_count_for_user_clues(&self) -> Option<Result<usize, String>> {
-        if self.solved_count() < START_SOLUTION_COUNT {
-            return None;
-        }
-
-        Some(self.count_exact_cover_solutions_with_cap(MAX_SOLUTION_COUNT))
-    }
 }
 
 fn value_to_bit(value: u8) -> u16 {
@@ -212,7 +182,7 @@ fn value_to_bit(value: u8) -> u16 {
 
 #[cfg(test)]
 mod tests {
-    use super::{Grid, MAX_SOLUTION_COUNT, START_SOLUTION_COUNT};
+    use super::{Grid, MAX_SOLUTION_COUNT};
 
     fn solved_grid_values() -> [[u8; 9]; 9] {
         [
@@ -320,9 +290,10 @@ mod tests {
     fn exact_remaining_solution_count_matches_known_high_clue_case() {
         let grid = build_user_clue_grid_with_omitted_digits(1, 3);
 
-        assert_eq!(grid.solved_count(), 63);
-        assert!(grid.solved_count() > START_SOLUTION_COUNT);
-        assert_eq!(grid.remaining_solution_count_for_user_clues(), Some(Ok(4)));
+        let summary = grid.remaining_solution_summary();
+        assert_eq!(summary.count, Some(4));
+        assert!(!summary.at_least_cap);
+        assert_eq!(summary.text, "Remaining solutions: 4");
     }
 
     #[test]
@@ -345,17 +316,23 @@ mod tests {
     }
 
     #[test]
-    fn exact_remaining_solution_count_is_not_attempted_below_user_clue_threshold() {
-        let grid = build_grid_with_user_clues(START_SOLUTION_COUNT - 1);
-        assert!(grid.remaining_solution_count_for_user_clues().is_none());
+    fn remaining_solution_summary_uses_cap_for_open_grids() {
+        let grid = Grid::new();
+        let summary = grid.remaining_solution_summary();
+        assert_eq!(summary.count, Some(MAX_SOLUTION_COUNT));
+        assert!(summary.at_least_cap);
+        assert_eq!(
+            summary.text,
+            format!("Remaining solutions: at least {}", MAX_SOLUTION_COUNT)
+        );
     }
 
     #[test]
-    fn exact_remaining_solution_count_runs_after_user_clue_threshold() {
+    fn remaining_solution_summary_reports_exact_count_for_near_complete_grid() {
         let grid = build_grid_with_user_clues(80);
-        assert_eq!(
-            grid.remaining_solution_count_for_user_clues(),
-            Some(Ok(1))
-        );
+        let summary = grid.remaining_solution_summary();
+        assert_eq!(summary.count, Some(1));
+        assert!(!summary.at_least_cap);
+        assert_eq!(summary.text, "Remaining solutions: 1");
     }
 }
